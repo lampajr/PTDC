@@ -2,6 +2,7 @@
   <dictionary name="lampajr">
     <words>
       <w>dataframe</w>
+      <w>datasets</w>
       <w>ptdc</w>
       <w>tweepy</w>
     </words>
