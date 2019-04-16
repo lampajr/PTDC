@@ -81,6 +81,13 @@ class OfflineStreamer(Streamer):
         except FileNotFoundError:
             self.file = open(self.path, "w")
 
+    def load_data_from_file(self, json_path):
+
+        """ load the user's data starting from streaming data in json format
+        :param json_path: path of the file where streaming data is saved"""
+
+        pass
+
 
 class OnlineStreamer(Streamer):
 
