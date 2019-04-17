@@ -135,25 +135,18 @@ class DataCollector(object):
 
         user = self._api.get_user(screen_name)
 
-        # TODO: collect timeline of user
-
-        # retrieve all information about single user
-        raw_data = pd.Series([getattr(user, attr) for attr in _all_user_attributes], index=self._user_dataset.columns)
-
-
-        raw_data = raw_data[self._user_attrs_selectors]
-        self._user_dataset = self._user_dataset.append(raw_data, ignore_index=True)
+        self._user_dataset = self._user_dataset.append(self._process_user(user=user), ignore_index=True)
 
     def _process_user(self, user):
 
         """ Process a single user, collecting all the information """
 
         raw_data = [getattr(user, attr) for attr in _all_user_attributes]
-        # TODO: add new attributes data, manually
+        # TODO: add new attributes data, manually, given its tweets
         tmp_tweets = self.collect_tweets(screen_name=user.screen_name)
 
         raw_data = pd.Series(raw_data, index=self._user_dataset.columns)
-        return raw_data
+        return raw_data[self._user_attrs_selectors]
 
     def collect_tweets(self, screen_name, n_tweets=20):
 
