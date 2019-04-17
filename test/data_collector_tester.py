@@ -12,7 +12,13 @@ if __name__ == '__main__':
     api = tweepy.API(auth_handler=auth, wait_on_rate_limit_notify=True, wait_on_rate_limit=True)
 
     collector = DataCollector(api=api)
-    print(collector.get_data().head())
+    print(collector.get_tweets_dataset().columns)
 
-    collector.add_user('AndreaLampa95')
-    print(collector.get_data().head())
+    #collector.collect_user('AndreaLampa95')
+    #print(collector.get_data().head())
+
+    collector.collect_tweets(screen_name='AndreaLampa95', n_tweets=4)
+    print(collector.get_tweets_dataset())
+    print(collector.get_tweets_dataset().loc[1, 'full_text'])
+    print(collector.get_tweets_dataset().loc[2, 'full_text'])
+    print(collector.get_tweets_dataset().loc[3, 'full_text'])
