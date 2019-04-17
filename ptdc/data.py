@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import tweepy
 
+from ptdc import utils
 
 _all_user_attributes = np.array(["id", "name", "screen_name", "location", "url", "description", "protected",
                                  "verified", "followers_count", "friends_count", "listed_count", "favourites_count",
@@ -128,6 +129,8 @@ class DataCollector(object):
 
         return self._tweets_dataset
 
+    # USERS
+
     def collect_user(self, screen_name):
 
         """ Collect all the information about a specific Account
@@ -141,12 +144,18 @@ class DataCollector(object):
 
         """ Process a single user, collecting all the information """
 
-        raw_data = [getattr(user, attr) for attr in _all_user_attributes]
-        # TODO: add new attributes data, manually, given its tweets
+        raw_data = [getattr(user, attr) for attr in _all_user_attributes]  # user attributes
+
+        raw_data.append(utils.get_date())  # profile crawled
+        raw_data.append(0)  # is suspended
+
+        # TODO: add new attributes data related to its tweets
         tmp_tweets = self.collect_tweets(screen_name=user.screen_name)
 
         raw_data = pd.Series(raw_data, index=self._user_dataset.columns)
         return raw_data[self._user_attrs_selectors]
+
+    # TWEETS
 
     def collect_tweets(self, screen_name, n_tweets=20):
 
@@ -178,5 +187,12 @@ class DataCollector(object):
             self._tweets_dataset = self._tweets_dataset.append(raw_data, ignore_index=True)
         return raw_data
 
-    def save_to_csv(self, filename):
-        self._user_dataset.to_csv(path_or_buf=filename, index=False)
+    # TODO: add collection through json file
+
+    # CSV CONVERTER
+
+    def user_dataset_to_csv(self, filename, sep="\t"):
+        self._user_dataset.to_csv(path_or_buf=filename, sep=sep, index=False)
+
+    def tweets_dataset_to_csv(self, filename, sep=","):
+        self._tweets_dataset.to_csv(path_or_buf=filename, sep=sep, index=False)
