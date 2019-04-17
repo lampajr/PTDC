@@ -1,5 +1,5 @@
 import time
-
+from datetime import datetime
 
 def get_millis():
 
@@ -13,3 +13,9 @@ def get_time():
     """ returns the current time in seconds """
 
     return int(round(time.time()))
+
+def get_date():
+
+    """ returns the current date """
+
+    return datetime.today().strftime('%Y-%m-%d')
