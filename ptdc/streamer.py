@@ -7,7 +7,7 @@ from ptdc.data import DataCollector
 
 class Streamer(tweepy.StreamListener):
 
-    def __init__(self, api, collector=None,  time_limit=None, path="../data/default_stream_file.json"):
+    def __init__(self, api, collector=None,  time_limit=None, path="../data/default_stream_file.json", verbose=True):
 
         """ Streamer constructor, it represents an offline streamer, store streaming data into a file
          :param api: tweepy api
@@ -16,11 +16,12 @@ class Streamer(tweepy.StreamListener):
 
         super(Streamer, self).__init__()
         self.api = api
+        self.collector = DataCollector(api=self.api) if collector is None else collector
         self.time_limit = time_limit
         self.path = path
         self.start_time = 0
         self.file = None
-        self.collector = DataCollector(api=self.api) if collector is None else collector
+        self.verbose = verbose
 
     def on_connect(self):
 
@@ -28,7 +29,9 @@ class Streamer(tweepy.StreamListener):
         the streaming server is established """
 
         self.start_time = utils.get_time()
-        logging.debug("Streaming started at {}".format(utils.get_date()))
+
+        if self.verbose:
+            logging.debug("Streaming started at {}".format(utils.get_date()))
 
         if self.path is not None:
             # open or create a new file
@@ -47,9 +50,12 @@ class Streamer(tweepy.StreamListener):
             if self.file is not None:
                 self.file.close()
                 self.file = None
+
+            if self.verbose:
+                logging.debug("Streaming terminated at {}".format(utils.get_date()))
+                logging.debug("Streaming duration = {} seconds".format(self.time_limit))
+
             # stop connection to he streaming server
-            logging.debug("Streaming terminated at {}".format(utils.get_date()))
-            logging.debug("Streaming duration = {} seconds".format(self.time_limit))
             return False
         elif self.file is not None:
             # print the raw data on the file
@@ -74,14 +80,11 @@ class Streamer(tweepy.StreamListener):
 
 class OnlineStreamer(Streamer):
 
-    """ Subclass of Streamer that collects data during the streaming, generating the corresponding DataFrame/s"""
+    """ Subclass of Streamer that generates the DataFrame/s during the collection of streaming's data, e.g. online """
 
-    def __init__(self, api, time_limit=None, path="../data/default_stream_file.json"):
+    def __init__(self, api, collector=None, time_limit=None, path="../data/default_stream_file.json", verbose=True):
 
-        """ Online streamer, collects data online during streaming
-        w/o saving it into a specific text file """
-
-        super(OnlineStreamer, self).__init__(api=api, time_limit=time_limit, path=path)
+        super(OnlineStreamer, self).__init__(api=api, collector=collector, time_limit=time_limit, path=path, verbose=verbose)
 
     def on_status(self, status):
 

@@ -1,8 +1,18 @@
 import tweepy
 from ptdc.streamer import OnlineStreamer
-
+import logging
+import sys
 
 if __name__ == '__main__':
+    root = logging.getLogger()
+    root.setLevel(logging.DEBUG)
+
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    root.addHandler(handler)
+
     consumer_key = "ouij6TL9OLOTb3Ca3lcyQ8yUd"
     consumer_key_secret = "VLHEEt5wbB5Kfu5eX1n546CbMSWLJmFuE5c2386u4ljT1uJA71"
     access_token = "425255853-66oQZ4Nw1c6rrjBL2f1M7dkucrrfeYqmUJMAcGfT"

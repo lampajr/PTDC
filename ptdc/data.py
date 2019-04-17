@@ -1,3 +1,5 @@
+import logging
+
 import pandas as pd
 import numpy as np
 import tweepy
@@ -6,19 +8,21 @@ from ptdc import utils
 
 _all_user_attributes = np.array(["id", "name", "screen_name", "location", "url", "description", "protected",
                                  "verified", "followers_count", "friends_count", "listed_count", "favourites_count",
-                                 "statuses_count", "created_at", "utc_offset", "geo_enabled", "lang",
+                                 "statuses_count", "created_at", "utc_offset", "time_zone", "geo_enabled", "lang",
                                  "contributors_enabled", "profile_background_color", "profile_background_image_url",
                                  "profile_background_image_url_https", "profile_background_tile",
                                  "profile_image_url", "profile_image_url_https", "profile_link_color",
                                  "profile_text_color", "profile_use_background_image", "default_profile",
                                  "default_profile_image"])
 
-_new_user_attributes = np.array(["profile_crawled", "is_suspended"])
+_new_user_attributes = np.array(["profile_crawled", "is_suspended", "n_tweets_collected", "mean_tweet_length"])
 
-_all_tweets_attributes = np.array(["id", "created_at", "full_text", "lang", "retweeted", "coordinates", "retweet_count",
-                                   "favorite_count", "source", "place", "geo", "truncated"])
+_all_tweets_attributes = np.array(["id", "created_at", "full_text", "lang", "coordinates", "retweet_count",
+                                   "favorite_count", "source", "place", "truncated", "is_quote_status",
+                                   "possibly_sensitive", "in_reply_to_status_id", "in_reply_to_user_id",
+                                   "in_reply_to_screen_name"])
 
-_new_tweets_attributes = np.array(["user_id"])
+_new_tweets_attributes = np.array(["user_id", "text_length", "hashtags", "media_urls", "quoted_user_id"])
 
 
 # attributes' sizes
@@ -55,54 +59,14 @@ def create_twitter_tweets_dataframe(selectors):
     return _dataset
 
 
-"""
-User object structure
-{
- 'follow_request_sent': False, 
- 'profile_use_background_image': True, 
- 'id': 132728535, 
- '_api': <tweepy.api.api object="" at="" xxxxxxx="">, 
- 'verified': False, 
- 'profile_sidebar_fill_color': 'C0DFEC', 
- 'profile_text_color': '333333', 
- 'followers_count': 80, 
- 'protected': False, 
- 'location': 'Seoul Korea', 
- 'profile_background_color': '022330', 
- 'id_str': '132728535', 
- 'utc_offset': 32400, 
- 'statuses_count': 742, 
- 'description': "Cars, Musics, Games, Electronics, toys, food, etc... I'm just a typical boy!",
- 'friends_count': 133, 
- 'profile_link_color': '0084B4', 
- 'profile_image_url': 'http://a1.twimg.com/profile_images/1213351752/_2_2__normal.jpg',
- 'notifications': False, 
- 'show_all_inline_media': False, 
- 'geo_enabled': True, 
- 'profile_background_image_url': 'http://a2.twimg.com/a/1294785484/images/themes/theme15/bg.png',
- 'screen_name': 'jaeeeee', 
- 'lang': 'en', 
- 'following': True, 
- 'profile_background_tile': False, 
- 'favourites_count': 2, 
- 'name': 'Jae Jung Chung', 
- 'url': 'http://www.carbonize.co.kr', 
- 'created_at': datetime.datetime(2010, 4, 14, 1, 20, 45), 
- 'contributors_enabled': False, 
- 'time_zone': 'Seoul', 
- 'profile_sidebar_border_color': 'a8c7f7', 
- 'is_translator': False, 
- 'listed_count': 2
-}
-"""
-
 class DataCollector(object):
 
     """ Data Collector that stores the DataFrames of the account and/or their tweets:
     provides methods for handling the data, adding new users, removing users.."""
 
     def __init__(self, api, user_attrs_selectors=None, collect_users=True,
-                 tweets_attrs_selectors=None, collect_tweets=True):
+                 tweets_attrs_selectors=None, collect_tweets=True, verbose=True):
+        self.verbose = verbose
         self._collect_tweets = collect_tweets
         self._collect_users = collect_users
         self._user_attrs_selectors = np.ones(_user_attr_size, dtype=bool) if user_attrs_selectors is None else \
@@ -138,9 +102,12 @@ class DataCollector(object):
 
         user = self._api.get_user(screen_name)
 
+        if self.verbose:
+            logging.debug("Collecting user {}".format(screen_name))
+
         self._user_dataset = self._user_dataset.append(self._process_user(user=user), ignore_index=True)
 
-    def _process_user(self, user):
+    def _process_user(self, user, n_tweets=20):
 
         """ Process a single user, collecting all the information """
 
@@ -148,9 +115,12 @@ class DataCollector(object):
 
         raw_data.append(utils.get_date())  # profile crawled
         raw_data.append(0)  # is suspended
+        raw_data.append(n_tweets)  # number of collected tweets
 
         # TODO: add new attributes data related to its tweets
-        tmp_tweets = self.collect_tweets(screen_name=user.screen_name)
+        tmp_tweets = self.collect_tweets(screen_name=user.screen_name, n_tweets=n_tweets)
+        raw_data.append(tmp_tweets["length"].mean())  # mean length of tweets
+        raw_data.append([id_ for id_ in tmp_tweets["quoted_user_id"]])  # quoted user ids
 
         raw_data = pd.Series(raw_data, index=self._user_dataset.columns)
         return raw_data[self._user_attrs_selectors]
@@ -177,7 +147,15 @@ class DataCollector(object):
         :return: pandas Series containing all the information for that tweet"""
 
         raw_data = [getattr(tweet, attr) for attr in _all_tweets_attributes]
-        raw_data.append(tweet.user.id)
+
+        raw_data.append(tweet.user.id)  # owner id
+        raw_data.append(len(tweet.full_text))  # length of the text
+        raw_data.append([ht["text"] for ht in tweet.entities["hashtags"]])  # hashtags
+        raw_data.append([med["media_url_https"] for med in tweet.entities["media"]])  # media urls
+        if tweet.is_quote_status:
+            raw_data.append(tweet.quoted_status.user.id)  # original tweet's user id
+        else:
+            raw_data.append(None)
 
         raw_data = pd.Series(raw_data, index=self._tweets_dataset.columns)
 
@@ -187,7 +165,7 @@ class DataCollector(object):
             self._tweets_dataset = self._tweets_dataset.append(raw_data, ignore_index=True)
         return raw_data
 
-    # TODO: add collection through json file
+    # TODO: collect data through json file
 
     # CSV CONVERTER
 
