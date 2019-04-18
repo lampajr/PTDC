@@ -35,31 +35,32 @@ class Collector(object):
     """ Data Collector that stores the DataFrames of the account and/or their tweets:
     provides methods for handling the data, adding new users, removing users.."""
 
-    def __init__(self, api, collect_users=True, collect_tweets=True,
+    def __init__(self, api, collect_users=True, collect_statuses=True,
                  user_attr_dict=None, user_tweets_attr_dict=None, tweet_attr_dict=None,
                  verbose=True):
         """
         Data Collector constructor
         :param api: tweepy api used for querying
         :param collect_users: bool, tells whether or not collect users
-        :param collect_tweets: bool, tells whether or not collect tweets
-        :param user_attr_dict: dict <attribute, function> for user. func takes user and attribute name
-        :param user_tweets_attr_dict: dict <attribute, function> for user. func takes user's tweets and attribute name
-        :param tweet_attr_dict: dict <attribute, function> for tweet. function takes tweet and attribute name
+        :param collect_statuses: bool, tells whether or not collect statuses
+        :param user_attr_dict: dict <attribute, func> for user. func takes user and attribute name
+        :param user_tweets_attr_dict: dict <attribute, func> for user. func takes tweets dataframe and attribute name
+        :param tweet_attr_dict: dict <attribute, func> for tweet. function takes tweet and attribute name
         :param verbose: bool, verbosity
         """
         self.verbose = verbose
-        self._collect_tweets = collect_tweets
+        self._collect_statuses = collect_statuses
         self._collect_users = collect_users
 
         self._user_attr_dict = utils.default_user_dict if user_attr_dict is None else user_attr_dict
-        self._user_tweets_attr_dict = utils.default_user_tweets_dict if user_tweets_attr_dict is None else user_tweets_attr_dict
+        self._user_statuses_attr_dict = utils.default_user_tweets_dict if user_tweets_attr_dict is None \
+            else user_tweets_attr_dict
         self._tweet_attr_dict = utils.default_tweet_dict if tweet_attr_dict is None else tweet_attr_dict
 
         # empty datasets
-        self._user_dataset = create_twitter_account_dataframe(attributes=np.array(np.concatenate((
-            np.array(list(self._user_attr_dict.keys())), np.array(list(self._user_tweets_attr_dict.keys()))))))
-        self._tweets_dataset = create_twitter_statuses_dataframe(attributes=np.array(list(self._tweet_attr_dict.keys())))
+        self._users_dataset = create_twitter_account_dataframe(attributes=np.array(np.concatenate((
+            np.array(list(self._user_attr_dict.keys())), np.array(list(self._user_statuses_attr_dict.keys()))))))
+        self._statuses_dataset = create_twitter_statuses_dataframe(attributes=np.array(list(self._tweet_attr_dict.keys())))
 
         # Twitter api for making query
         self._api = api
@@ -70,7 +71,7 @@ class Collector(object):
         :returns: pandas DataFrame containing collected accounts
         """
 
-        return self._user_dataset
+        return self._users_dataset
 
     def get_tweets_dataset(self):
 
@@ -78,7 +79,7 @@ class Collector(object):
         :returns: pandas DataFrame containing collected tweets
         """
 
-        return self._tweets_dataset
+        return self._statuses_dataset
 
     # USERS
 
@@ -95,28 +96,31 @@ class Collector(object):
         if self.verbose:
             print("Collecting user {}".format(screen_name))
 
-        self._user_dataset = self._user_dataset.append(self._process_user(user=user, n_tweets=n_tweets), ignore_index=True)
+        self._users_dataset = self._users_dataset.append(self._process_user(user=user, n_statuses=n_tweets), ignore_index=True)
 
         if self.verbose:
             print("User collected!")
 
-    def _process_user(self, user, n_tweets):
+    def _process_user(self, user, n_statuses):
 
         """
         Process a single user, collecting all the information
         :param user: Twitter user object
-        :param n_tweets: number of tweets to collect for this user
+        :param n_statuses: number of statuses to collect for this user
         :return: raw_data containing all attributes' values for this user
         """
 
         user_data = [func(user, attr_name) for attr_name, func in self._user_attr_dict.items()]  # user's attributes
 
-        # collect user's tweets
-        tmp_tweets = self.collect_statuses(screen_name=user.screen_name, n_tweets=n_tweets)
+        if self._user_statuses_attr_dict or self._collect_statuses:
+            # collect user's statuses if the dict is not empty
+            tmp_tweets = self.collect_statuses(screen_name=user.screen_name, n_tweets=n_statuses)
+            if self._user_statuses_attr_dict:
+                user_statuses_data = [func(tmp_tweets, attr_name) for attr_name, func in
+                                      self._user_statuses_attr_dict.items()]
+                user_data = user_data + user_statuses_data
 
-        user_tweets_data = [func(tmp_tweets, attr_name) for attr_name, func in self._user_tweets_attr_dict.items()]
-
-        raw_data = pd.Series(user_data+user_tweets_data, index=self._user_dataset.columns)
+        raw_data = pd.Series(user_data, index=self._users_dataset.columns)
         return raw_data
 
     # TWEETS
@@ -143,10 +147,10 @@ class Collector(object):
 
         tweet_data = [func(status, attr_name) for attr_name, func in self._tweet_attr_dict.items()]  # tweet's attributes
 
-        raw_data = pd.Series(tweet_data, index=self._tweets_dataset.columns)
+        raw_data = pd.Series(tweet_data, index=self._statuses_dataset.columns)
 
-        if self._collect_tweets:
-            self._tweets_dataset = self._tweets_dataset.append(raw_data, ignore_index=True)
+        if self._collect_statuses:
+            self._statuses_dataset = self._statuses_dataset.append(raw_data, ignore_index=True)
 
         return raw_data
 
@@ -159,9 +163,9 @@ class Collector(object):
     def user_dataset_to_csv(self, filename, sep="\t"):
         if self.verbose:
             print("Saving users dataset at {}".format(filename))
-        self._user_dataset.to_csv(path_or_buf=filename, sep=sep, index=False)
+        self._users_dataset.to_csv(path_or_buf=filename, sep=sep, index=False)
 
     def tweets_dataset_to_csv(self, filename, sep="\t"):
         if self.verbose:
             print("Saving tweets dataset at {}".format(filename))
-        self._tweets_dataset.to_csv(path_or_buf=filename, sep=sep, index=False)
+        self._statuses_dataset.to_csv(path_or_buf=filename, sep=sep, index=False)
