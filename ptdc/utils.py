@@ -104,7 +104,8 @@ default_user_dict = {"id": get_attribute,
                      "default_profile": get_attribute,
                      "default_profile_image": get_attribute,
                      "profile_crawled": lambda x, y: get_date(),
-                     "is_suspended": lambda x, y: 0}
+                     "is_suspended": lambda x, y: 0,
+                     "f_ratio (following/follower)": lambda user, _: user.friends_count / user.followers_count}
 
 default_user_tweets_dict = {"n_tweets_collected": lambda tweets_data, _: tweets_data.shape[0],
                             "mean_tweet_length": lambda tweets_data, _: tweets_data["text_length"].mean(),
