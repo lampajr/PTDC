@@ -1,4 +1,4 @@
-from ptdc.data import *
+from ptdc.collector import *
 import tweepy
 
 if __name__ == '__main__':
@@ -11,7 +11,7 @@ if __name__ == '__main__':
     auth.set_access_token(access_token, access_token_secret)
     api = tweepy.API(auth_handler=auth, wait_on_rate_limit_notify=True, wait_on_rate_limit=True)
 
-    collector = DataCollector(api=api)
+    collector = Collector(api=api)
     print(collector.get_tweets_dataset().columns)
 
     #collector.collect_user('AndreaLampa95')
