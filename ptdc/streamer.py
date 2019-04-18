@@ -6,7 +6,7 @@ from ptdc.collector import Collector
 
 class Streamer(tweepy.StreamListener):
 
-    def __init__(self, api, collector=None, time_limit=None,
+    def __init__(self, api, time_limit=None,
                  json_path="../data/default_stream_file.json",
                  verbose=True):
 
@@ -17,7 +17,6 @@ class Streamer(tweepy.StreamListener):
 
         super(Streamer, self).__init__()
         self.api = api
-        self.collector = Collector(api=self.api) if collector is None else collector
         self.time_limit = time_limit
         self.json_path = json_path
         self.start_time = 0
@@ -85,7 +84,10 @@ class OnlineStreamer(Streamer):
 
     def __init__(self, api, collector=None, time_limit=None, json_path="../data/default_stream_file.json", verbose=True):
 
-        super(OnlineStreamer, self).__init__(api=api, collector=collector, time_limit=time_limit, json_path=json_path, verbose=verbose)
+        super(OnlineStreamer, self).__init__(api=api, time_limit=time_limit, json_path=json_path, verbose=verbose)
+
+        # collector needed for online data collection
+        self.collector = Collector(api=self.api) if collector is None else collector
 
     def on_status(self, status):
 
