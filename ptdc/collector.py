@@ -60,23 +60,29 @@ class Collector(object):
     ############ COLLECTOR METHODS ############
     ###########################################
 
-    def collect_user(self, screen_name, n_tweets=utils.DEFAULT_N_TWEETS):
+    def collect_user(self, screen_name, filter_=lambda x: True, n_statuses=20):
 
         """
         Collect all the information about a specific Account
         :param screen_name: the screen_name/id of the account
-        :param n_tweets: number of tweets to collect for this user
+        :param filter_: filtering function that takes as input the user obj and return True or False
+                        indicating whether collect the user or not
+        :param n_statuses: number of statuses to collect for this user
         """
 
         user = self._api.get_user(screen_name)
 
-        if self.verbose:
-            print("Collecting user {}".format(screen_name))
+        if filter_(user):
+            if self.verbose:
+                print("Collecting user {}".format(screen_name))
 
-        self._users_dataset = self._users_dataset.append(self._process_user(user=user, n_statuses=n_tweets), ignore_index=True)
+            self._users_dataset = self._users_dataset.append(self._process_user(user=user, n_statuses=n_statuses), ignore_index=True)
 
-        if self.verbose:
-            print("User collected!")
+            if self.verbose:
+                print("User collected!")
+        else:
+            if self.verbose:
+                print("User skipped..")
 
     def _process_user(self, user, n_statuses):
 
@@ -100,9 +106,7 @@ class Collector(object):
         raw_data = pd.Series(user_data, index=self._users_dataset.columns)
         return raw_data
 
-    # TWEETS
-
-    def collect_statuses(self, screen_name, n_tweets=utils.DEFAULT_N_TWEETS):
+    def collect_statuses(self, screen_name, n_tweets=20):
 
         """
         Collect some tweets for a specific account, retrieving their attributes
