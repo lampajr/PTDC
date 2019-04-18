@@ -107,11 +107,11 @@ default_user_dict = {"id": get_attribute,
                      "is_suspended": lambda x, y: 0,
                      "f_ratio (following/follower)": lambda user, _: user.friends_count / user.followers_count}
 
-default_user_tweets_dict = {"n_tweets_collected": lambda tweets_data, _: tweets_data.shape[0],
-                            "mean_tweet_length": lambda tweets_data, _: tweets_data["text_length"].mean(),
-                            "quoted_user_ids": lambda tweets_data, _: tweets_data["quoted_user_id"],
-                            "replied_status_ids": lambda tweets_data, _: tweets_data["in_reply_to_status_id"],
-                            "replied_user_ids": lambda tweets_data, _: tweets_data["in_reply_to_user_id"]}
+default_user_tweets_dict = {"n_tweets_collected": lambda statuses_data, _: statuses_data.shape[0],
+                            "mean_tweet_length": lambda statuses_data, _: statuses_data["text_length"].mean(),
+                            "quoted_user_ids": lambda statuses_data, _: statuses_data["quoted_user_id"],
+                            "replied_status_ids": lambda statuses_data, _: statuses_data["in_reply_to_status_id"],
+                            "replied_user_ids": lambda statuses_data, _: statuses_data["in_reply_to_user_id"]}
 
 default_tweet_dict = {"id": get_attribute,
                       "created_at": get_attribute,
@@ -127,8 +127,8 @@ default_tweet_dict = {"id": get_attribute,
                       "in_reply_to_status_id": get_attribute,
                       "in_reply_to_user_id": get_attribute,
                       "in_reply_to_screen_name": get_attribute,
-                      "user_id": lambda tweet, _: tweet.user.id,
-                      "text_length": lambda tweet, _: len(tweet.full_text),
-                      "hashtags": lambda tweet, _: [ht["text"] for ht in tweet.entities["hashtags"]],
+                      "user_id": lambda status, _: status.user.id,
+                      "text_length": lambda status, _: len(status.full_text),
+                      "hashtags": lambda status, _: [ht["text"] for ht in status.entities["hashtags"]],
                       "media_urls": get_media,
                       "quoted_user_id": get_quoted_user_id}
