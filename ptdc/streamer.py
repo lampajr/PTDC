@@ -9,6 +9,7 @@ class Streamer(tweepy.StreamListener):
     def __init__(self,
                  api,
                  time_limit=None,
+                 data_limit=None,
                  json_path="../data/default_stream_file.json",
                  filter_user=lambda x: True,
                  filter_status=lambda x: True,
@@ -19,6 +20,7 @@ class Streamer(tweepy.StreamListener):
         Streamer constructor, it represents an offline streamer, store streaming data into a file
         :param api: tweepy api
         :param time_limit: duration of the streaming, if None last forever
+        :param data_limit: number of data to collect at most (streaming data)
         :param json_path: file's location where saving the data collected, if None print on the std output
         :param filter_user: user filter function: User --> Bool
         :param filter_status: status filter function: Status --> Bool
@@ -28,11 +30,13 @@ class Streamer(tweepy.StreamListener):
         super(Streamer, self).__init__()
         self.api = api
         self.time_limit = time_limit
+        self.data_limit = data_limit
         self.json_path = json_path
         self.filter_user = filter_user
         self.filter_status = filter_status
         self.n_statuses = n_statuses
         self.start_time = 0
+        self.count = 0
         self.file = None
         self.verbose = verbose
 
@@ -42,6 +46,7 @@ class Streamer(tweepy.StreamListener):
         the streaming server is established """
 
         self.start_time = utils.get_time()
+        self.count = 0
 
         if self.verbose:
             print("Streaming started at {}".format(utils.get_date()))
@@ -57,8 +62,9 @@ class Streamer(tweepy.StreamListener):
 
         """ Called when new data is available """
 
-        # if enough time is passed stop streaming
-        if self.time_limit is not None and (utils.get_time() - self.start_time) > self.time_limit:
+        # if enough time was passed stop streaming or enough data was collected
+        if (self.time_limit is not None and (utils.get_time() - self.start_time) > self.time_limit) \
+                or (self.data_limit is not None and self.count >= self.data_limit):
             # if file has been opened, close it
             if self.file is not None:
                 self.file.close()
@@ -95,9 +101,23 @@ class OnlineStreamer(Streamer):
 
     """ Online Streamer that collects user's data and/or statuses's data during the streaming, e.g. online """
 
-    def __init__(self, api, collector=None, time_limit=None, json_path="../data/default_stream_file.json", verbose=True):
+    def __init__(self,
+                 api,
+                 collector=None,
+                 time_limit=None,
+                 data_limit=None,
+                 json_path="../data/default_stream_file.json",
+                 filter_user=lambda x: True,
+                 filter_status=lambda x: True,
+                 verbose=True):
 
-        super(OnlineStreamer, self).__init__(api=api, time_limit=time_limit, json_path=json_path, verbose=verbose)
+        super(OnlineStreamer, self).__init__(api=api,
+                                             time_limit=time_limit,
+                                             data_limit=data_limit,
+                                             json_path=json_path,
+                                             filter_user=filter_user,
+                                             filter_status=filter_status,
+                                             verbose=verbose)
 
         # collector needed for online data collection
         self.collector = Collector(api=self.api) if collector is None else collector
@@ -111,14 +131,30 @@ class OnlineStreamer(Streamer):
                                     filter_status=self.filter_status,
                                     n_statuses=self.n_statuses)
 
+        self.count += 1
+
 
 class OnlineStatusStreamer(Streamer):
 
     """ Online Streamer that collects statuses into DataFrame during streaming """
 
-    def __init__(self, api, collector=None, time_limit=None, json_path="../data/default_stream_file.json", verbose=True):
+    def __init__(self,
+                 api,
+                 collector=None,
+                 time_limit=None,
+                 data_limit=None,
+                 json_path="../data/default_stream_file.json",
+                 filter_user=lambda x: True,
+                 filter_status=lambda x: True,
+                 verbose=True):
 
-        super(OnlineStatusStreamer, self).__init__(api=api, time_limit=time_limit, json_path=json_path, verbose=verbose)
+        super(OnlineStatusStreamer, self).__init__(api=api,
+                                                   time_limit=time_limit,
+                                                   data_limit=data_limit,
+                                                   json_path=json_path,
+                                                   filter_user=filter_user,
+                                                   filter_status=filter_status,
+                                                   verbose=verbose)
 
         # collector needed for online data collection
         self.collector = Collector(api=self.api) if collector is None else collector
@@ -130,3 +166,4 @@ class OnlineStatusStreamer(Streamer):
         self.collector.collect_statuses(screen_name=status.user.screen_name,
                                         filter_status=self.filter_status,
                                         n_statuses=self.n_statuses)
+        self.count += 1

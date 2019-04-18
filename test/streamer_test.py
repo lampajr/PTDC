@@ -13,7 +13,7 @@ if __name__ == '__main__':
     auth.set_access_token(access_token, access_token_secret)
     api = tweepy.API(auth_handler=auth, wait_on_rate_limit_notify=True, wait_on_rate_limit=True)
 
-    streamer = OnlineStreamer(api=api, time_limit=30)
+    streamer = OnlineStreamer(api=api, time_limit=None, data_limit=4)
     streamer.stream(track=['python'], is_async=False)
     streamer.collector.user_dataset_to_csv(filename="../data/accounts.csv")
     streamer.collector.tweets_dataset_to_csv(filename="../data/statuses.csv")
