@@ -37,41 +37,65 @@ def get_attribute(obj, attr_name):
 
     return getattr(obj, attr_name)
 
-def get_media(tweet, attr_name):
+def get_media(status, attr_name):
 
     """
     Retrieve media urls of a tweet
-    :param tweet: Tweet object
+    :param status: Tweet object
     :param attr_name: unused
     :return: urls list or None
     """
 
     try:
-        return [med["url"] for med in tweet.entities["media"]]
+        return [med["url"] for med in status.entities["media"]]
     except KeyError:
         return None
 
 
-def get_quoted_user_id(tweet, attr_name):
+def get_quoted_user_id(status, attr_name):
 
     """
     Retrieve the user id of the original tweet
-    :param tweet: Tweet object
+    :param status: Tweet object
     :param attr_name: unused
     :return: user id or None
     """
 
     try:
-        return tweet.quoted_status.user.id if tweet.is_quote_status else None
+        return status.quoted_status.user.id if status.is_quote_status else None
+    except AttributeError:
+        return None
+
+def get_retweeted_user_id(status, attr_name):
+
+    """
+    Retrieve the user id of the original status
+    :param status: Tweet object
+    :param attr_name: unused
+    :return: user id or None
+    """
+
+    try:
+        return status.retweeted_status.user.id
+    except AttributeError:
+        return None
+
+def get_retweeted_status(status, attr_name):
+
+    """
+    Retrieve the id of the retweeted status
+    :param status: Tweet object
+    :param attr_name: unused
+    :return: status id or None
+    """
+
+    try:
+        return status.retweeted_status.id
     except AttributeError:
         return None
 
 
 # DEFAULT COLLECTOR DATA
-
-
-DEFAULT_N_TWEETS = 20
-
 
 default_user_dict = {"id": get_attribute,
                      "name": get_attribute,
@@ -109,9 +133,10 @@ default_user_dict = {"id": get_attribute,
 
 default_user_tweets_dict = {"n_tweets_collected": lambda statuses_data, _: statuses_data.shape[0],
                             "mean_tweet_length": lambda statuses_data, _: statuses_data["text_length"].mean(),
-                            "quoted_user_ids": lambda statuses_data, _: statuses_data["quoted_user_id"],
-                            "replied_status_ids": lambda statuses_data, _: statuses_data["in_reply_to_status_id"],
-                            "replied_user_ids": lambda statuses_data, _: statuses_data["in_reply_to_user_id"]}
+                            "quoted_user_ids": lambda statuses_data, _: [x for x in statuses_data["quoted_user_id"] if x is not None],
+                            "replied_status_ids": lambda statuses_data, _: [x for x in statuses_data["in_reply_to_status_id"] if x is not None],
+                            "replied_user_ids": lambda statuses_data, _: [x for x in statuses_data["in_reply_to_user_id"] if x is not None],
+                            "retweeted_user_ids": lambda statuses_data, _: [x for x in statuses_data["retweeted_user_id"] if x is not None]}
 
 default_tweet_dict = {"id": get_attribute,
                       "created_at": get_attribute,
@@ -131,4 +156,6 @@ default_tweet_dict = {"id": get_attribute,
                       "text_length": lambda status, _: len(status.full_text),
                       "hashtags": lambda status, _: [ht["text"] for ht in status.entities["hashtags"]],
                       "media_urls": get_media,
-                      "quoted_user_id": get_quoted_user_id}
+                      "quoted_user_id": get_quoted_user_id,
+                      "retweeted_status": get_retweeted_status,
+                      "retweeted_user_id": get_retweeted_user_id}
