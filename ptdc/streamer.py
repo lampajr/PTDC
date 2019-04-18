@@ -6,19 +6,32 @@ from ptdc.collector import Collector
 
 class Streamer(tweepy.StreamListener):
 
-    def __init__(self, api, time_limit=None,
+    def __init__(self,
+                 api,
+                 time_limit=None,
                  json_path="../data/default_stream_file.json",
+                 filter_user=lambda x: True,
+                 filter_status=lambda x: True,
+                 n_statuses=20,
                  verbose=True):
 
-        """ Streamer constructor, it represents an offline streamer, store streaming data into a file
-         :param api: tweepy api
-         :param time_limit: duration of the streaming, if None last forever
-         :param json_path: file's location where saving the data collected, if None print on the std output """
+        """
+        Streamer constructor, it represents an offline streamer, store streaming data into a file
+        :param api: tweepy api
+        :param time_limit: duration of the streaming, if None last forever
+        :param json_path: file's location where saving the data collected, if None print on the std output
+        :param filter_user: user filter function: User --> Bool
+        :param filter_status: status filter function: Status --> Bool
+        :param n_statuses: number of statuses to collect
+        :param verbose: verbosity"""
 
         super(Streamer, self).__init__()
         self.api = api
         self.time_limit = time_limit
         self.json_path = json_path
+        self.filter_user = filter_user
+        self.filter_status = filter_status
+        self.n_statuses = n_statuses
         self.start_time = 0
         self.file = None
         self.verbose = verbose
@@ -80,7 +93,7 @@ class Streamer(tweepy.StreamListener):
 
 class OnlineStreamer(Streamer):
 
-    """ Subclass of Streamer that generates the DataFrame/s during the collection of streaming's data, e.g. online """
+    """ Online Streamer that collects user's data and/or statuses's data during the streaming, e.g. online """
 
     def __init__(self, api, collector=None, time_limit=None, json_path="../data/default_stream_file.json", verbose=True):
 
@@ -93,4 +106,27 @@ class OnlineStreamer(Streamer):
 
         """ called when raw data is received from stream """
 
-        self.collector.collect_user(screen_name=status.user.screen_name)
+        self.collector.collect_user(screen_name=status.user.screen_name,
+                                    filter_user=self.filter_user,
+                                    filter_status=self.filter_status,
+                                    n_statuses=self.n_statuses)
+
+
+class OnlineStatusStreamer(Streamer):
+
+    """ Online Streamer that collects statuses into DataFrame during streaming """
+
+    def __init__(self, api, collector=None, time_limit=None, json_path="../data/default_stream_file.json", verbose=True):
+
+        super(OnlineStatusStreamer, self).__init__(api=api, time_limit=time_limit, json_path=json_path, verbose=verbose)
+
+        # collector needed for online data collection
+        self.collector = Collector(api=self.api) if collector is None else collector
+
+    def on_status(self, status):
+
+        """ called when raw data is received from stream """
+
+        self.collector.collect_statuses(screen_name=status.user.screen_name,
+                                        filter_status=self.filter_status,
+                                        n_statuses=self.n_statuses)

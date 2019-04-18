@@ -101,7 +101,7 @@ class Collector(object):
 
         if self._user_statuses_attr_dict or self._collect_statuses:
             # collect user's statuses if the dict is not empty
-            tmp_tweets = self.collect_statuses(screen_name=user.screen_name, filter_status=filter_status, n_tweets=n_statuses)
+            tmp_tweets = self.collect_statuses(screen_name=user.screen_name, filter_status=filter_status, n_statuses=n_statuses)
             if self._user_statuses_attr_dict:
                 user_statuses_data = [func(tmp_tweets, attr_name) for attr_name, func in
                                       self._user_statuses_attr_dict.items()]
@@ -110,18 +110,18 @@ class Collector(object):
         raw_data = pd.Series(user_data, index=self._users_dataset.columns)
         return raw_data
 
-    def collect_statuses(self, screen_name, filter_status=lambda x: True, n_tweets=20):
+    def collect_statuses(self, screen_name, filter_status=lambda x: True, n_statuses=20):
 
         """
         Collect some tweets for a specific account, retrieving their attributes
         :param screen_name: screen_name of the account for which retrieve their tweets
         :param filter_status: filtering function that takes as input the status obj and return True or False
                         indicating whether collect the tweet or not
-        :param n_tweets: number of tweets to collect for that account
+        :param n_statuses: number of tweets to collect for that account
         :return: DataFrame containing all tweets collected for this user"""
 
         tmp_statuses_set = pd.DataFrame(columns=np.array(list(self._tweet_attr_dict.keys())))
-        for status in tweepy.Cursor(self._api.user_timeline, id=screen_name,  tweet_mode='extended').items(n_tweets):
+        for status in tweepy.Cursor(self._api.user_timeline, id=screen_name,  tweet_mode='extended').items(n_statuses):
             if filter_status(status):
                 tmp_statuses_set = tmp_statuses_set.append(self._process_status(status=status), ignore_index=True)
 
