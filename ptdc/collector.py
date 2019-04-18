@@ -4,31 +4,6 @@ import tweepy
 
 from ptdc import utils
 
-def create_twitter_account_dataframe(attributes):
-
-    """
-    Create an empty pandas DataFrame with specified attributes, suitable for storing user's information
-    :param attributes: Numpy array of attributes to be considered in the dataframe as columns
-    """
-
-    # create empty DataFrame with specified attributes
-    _dataset = pd.DataFrame(columns=attributes)
-
-    return _dataset
-
-
-def create_twitter_statuses_dataframe(attributes):
-
-    """
-    Create an empty pandas DataFrame with specified attributes, suitable for storing status's information
-    :param attributes: Numpy array of attributes to be considered in the dataframe as columns
-    """
-
-    # create empty DataFrame with specified attributes
-    _dataset = pd.DataFrame(columns=attributes)
-
-    return _dataset
-
 
 class Collector(object):
 
@@ -58,9 +33,9 @@ class Collector(object):
         self._tweet_attr_dict = utils.default_tweet_dict if tweet_attr_dict is None else tweet_attr_dict
 
         # empty datasets
-        self._users_dataset = create_twitter_account_dataframe(attributes=np.array(np.concatenate((
+        self._users_dataset = pd.DataFrame(columns=np.array(np.concatenate((
             np.array(list(self._user_attr_dict.keys())), np.array(list(self._user_statuses_attr_dict.keys()))))))
-        self._statuses_dataset = create_twitter_statuses_dataframe(attributes=np.array(list(self._tweet_attr_dict.keys())))
+        self._statuses_dataset = pd.DataFrame(columns=np.array(list(self._tweet_attr_dict.keys())))
 
         # Twitter api for making query
         self._api = api
@@ -81,7 +56,9 @@ class Collector(object):
 
         return self._statuses_dataset
 
-    # USERS
+    ###########################################
+    ############ COLLECTOR METHODS ############
+    ###########################################
 
     def collect_user(self, screen_name, n_tweets=utils.DEFAULT_N_TWEETS):
 
@@ -133,7 +110,7 @@ class Collector(object):
         :param n_tweets: number of tweets to collect for that account
         :return: DataFrame containing all tweets collected for this user"""
 
-        tmp_statuses_set = create_twitter_statuses_dataframe(np.array(list(self._tweet_attr_dict.keys())))
+        tmp_statuses_set = pd.DataFrame(columns=np.array(list(self._tweet_attr_dict.keys())))
         for status in tweepy.Cursor(self._api.user_timeline, id=screen_name,  tweet_mode='extended').items(n_tweets):
             tmp_statuses_set = tmp_statuses_set.append(self._process_status(status=status), ignore_index=True)
 
@@ -145,9 +122,10 @@ class Collector(object):
         :param status: Twitter tweet object that has to be processed, by extracting all its information
         :return: pandas Series containing all the information for that tweet: raw_data """
 
-        tweet_data = [func(status, attr_name) for attr_name, func in self._tweet_attr_dict.items()]  # tweet's attributes
+        # status' attributes
+        status_data = [func(status, attr_name) for attr_name, func in self._tweet_attr_dict.items()]
 
-        raw_data = pd.Series(tweet_data, index=self._statuses_dataset.columns)
+        raw_data = pd.Series(status_data, index=self._statuses_dataset.columns)
 
         if self._collect_statuses:
             self._statuses_dataset = self._statuses_dataset.append(raw_data, ignore_index=True)
