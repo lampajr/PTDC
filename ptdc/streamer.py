@@ -1,6 +1,14 @@
-# PTDC
-# Copyright 2019 Lamparelli Andrea
-# See LICENSE for details.
+"""
+Streamer module, it contains all Streamer object used for listening on Twitter channel
+Streamer -> makes an offline collection, since it simply print data listened in json format
+OnlineStreamer -> beyond printing streamed data, it will collect users and/or statuses directly during streaming,
+                  it requires a Collector obj
+OnlineStatusesStreamer -> it collects data during streaming, but in this case only statuses are collected.
+
+
+:copyright: Copyright since 2019 Lamparelli Andrea, all rights reserved
+:license: MIT, see LICENSE for more details.
+"""
 
 import logging
 

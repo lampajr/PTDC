@@ -1,6 +1,9 @@
-# PTDC
-# Copyright 2019 Lamparelli Andrea
-# See LICENSE for details.
+"""
+Support module provides useful function used for computing attributes and other things
+
+:copyright: Copyright since 2019 Lamparelli Andrea, all rights reserved
+:license: MIT, see LICENSE for more details.
+"""
 
 import time
 from datetime import datetime

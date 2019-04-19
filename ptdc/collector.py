@@ -1,6 +1,12 @@
-# PTDC
-# Copyright 2019 Lamparelli Andrea
-# See LICENSE for details.
+"""
+Collector module, it contains the Collector class that represents tha main
+point used for storing data collected from twitter.
+the collector will make queries to Twitter, through Tweepy API, and stores
+the data into Pandas DataFrame.
+
+:copyright: Copyright since 2019 Lamparelli Andrea, all rights reserved
+:license: MIT, see LICENSE for more details.
+"""
 
 import json
 import logging

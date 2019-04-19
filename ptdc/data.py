@@ -1,6 +1,10 @@
-# PTDC
-# Copyright 2019 Lamparelli Andrea
-# See LICENSE for details.
+"""
+Data module provides default dictionary that are used by the default collectors,
+representing which features/attributes are collected from users and statuses
+
+:copyright: Copyright since 2019 Lamparelli Andrea, all rights reserved
+:license: MIT, see LICENSE for more details.
+"""
 
 from ptdc.support import *
 from functools import reduce
