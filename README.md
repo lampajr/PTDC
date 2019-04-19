@@ -8,6 +8,7 @@ Python library that provides methods useful for collecting data from Twitter Soc
 
 ## USAGE
 ### Define tokens
+    # change these tokens with yours, see Twitter develeopers for more details to how obtain them
     consumer_key = "fsvd..."
     consumer_key_secret = "derfWdew3..."
     access_token = "dbAD..."
