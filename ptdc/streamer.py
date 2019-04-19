@@ -1,8 +1,12 @@
+# PTDC
+# Copyright 2019 Lamparelli Andrea
+# See LICENSE for details.
+
 import logging
 
 import tweepy
 
-from ptdc import utils
+from ptdc import support
 from ptdc.collector import Collector
 
 
@@ -52,10 +56,10 @@ class Streamer(tweepy.StreamListener):
 
         logging.debug("connection with streaming server established!")
 
-        self.start_time = utils.get_time()
+        self.start_time = support.get_time()
         self.count = 0
 
-        logging.debug("Streaming started at {}".format(utils.get_date()))
+        logging.debug("Streaming started at {}".format(support.get_date()))
 
         if self.json_path is not None:
             # open or create a new file
@@ -72,14 +76,14 @@ class Streamer(tweepy.StreamListener):
         logging.debug("New data received..")
 
         # if enough time was passed stop streaming or enough data was collected
-        if (self.time_limit is not None and (utils.get_time() - self.start_time) > self.time_limit) \
+        if (self.time_limit is not None and (support.get_time() - self.start_time) > self.time_limit) \
                 or (self.data_limit is not None and self.count >= self.data_limit):
             # if file has been opened, close it
             if self.file is not None:
                 self.file.close()
                 self.file = None
 
-            logging.debug("Streaming terminated at {}".format(utils.get_date()))
+            logging.debug("Streaming terminated at {}".format(support.get_date()))
             logging.debug("Streaming duration = {} seconds".format(self.time_limit))
 
             # stop connection to w/ streaming server
@@ -95,11 +99,19 @@ class Streamer(tweepy.StreamListener):
     def on_error(self, status_code):
         logging.error("Streaming error occurred: {}".format(status_code))
 
-    def stream(self, follow=None, track=None, is_async=False, locations=None,
-               stall_warnings=False, languages=None, encoding='utf8', filter_level=None):
+    def stream(self,
+               follow=None,
+               track=None,
+               is_async=False,
+               locations=None,
+               stall_warnings=False,
+               languages=None,
+               encoding='utf8',
+               filter_level=None):
 
         """
         Start the streaming in according to the filtering options passed as parameters
+        For more detailed description of the parameters see Tweepy Stream class
         :param follow:
         :param track:
         :param is_async:

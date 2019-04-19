@@ -1,4 +1,8 @@
-from ptdc.utils import *
+# PTDC
+# Copyright 2019 Lamparelli Andrea
+# See LICENSE for details.
+
+from ptdc.support import *
 from functools import reduce
 
 
@@ -36,6 +40,7 @@ default_user_dict = {"id": get_attribute,
                      "is_suspended": lambda x, y: 0,
                      "f_ratio (following/follower)": lambda user, _: user.friends_count / user.followers_count}
 
+
 default_user_tweets_dict = {"n_statuses_collected": lambda statuses_data, _: statuses_data.shape[0],
                             "mean_status_length": lambda statuses_data, _: statuses_data["text_length"].mean(),
                             "media_shared_urls": lambda statuses_data, _: reduce(lambda x,y: x+y, [], [x for x in statuses_data["media_urls"] if x is not None]),
@@ -45,6 +50,7 @@ default_user_tweets_dict = {"n_statuses_collected": lambda statuses_data, _: sta
                             "replied_user_ids": lambda statuses_data, _: [x for x in statuses_data["in_reply_to_user_id"] if x is not None],
                             "retweeted_status_ids": lambda statuses_data, _: [x for x in statuses_data["retweeted_status"] if x is not None],
                             "retweeted_user_ids": lambda statuses_data, _: [x for x in statuses_data["retweeted_user_id"] if x is not None]}
+
 
 default_tweet_dict = {"id": get_attribute,
                       "created_at": get_attribute,

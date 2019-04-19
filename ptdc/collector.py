@@ -1,3 +1,7 @@
+# PTDC
+# Copyright 2019 Lamparelli Andrea
+# See LICENSE for details.
+
 import json
 import logging
 
@@ -5,7 +9,7 @@ import numpy as np
 import pandas as pd
 import tweepy
 
-from ptdc import deafult_data as dd
+from ptdc import data as dd
 
 
 class Collector(object):
