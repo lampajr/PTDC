@@ -1,8 +1,11 @@
-import pandas as pd
+import json
+import logging
+
 import numpy as np
+import pandas as pd
 import tweepy
 
-from ptdc import utils
+from ptdc import deafult_data as dd
 
 
 class Collector(object):
@@ -10,12 +13,17 @@ class Collector(object):
     """ Data Collector that stores the DataFrames of the account and/or their tweets:
     provides methods for handling the data, adding new users, removing users.."""
 
-    def __init__(self, api, collect_users=True, collect_statuses=True,
-                 user_attr_dict=None, user_tweets_attr_dict=None, tweet_attr_dict=None,
+    def __init__(self,
+                 api,
+                 collect_users=True,
+                 collect_statuses=True,
+                 user_attr_dict=None,
+                 user_tweets_attr_dict=None,
+                 tweet_attr_dict=None,
                  verbose=True):
         """
         Data Collector constructor
-        :param api: tweepy api used for querying
+        :param api: tweepy api used for querying Twitter
         :param collect_users: bool, tells whether or not collect users
         :param collect_statuses: bool, tells whether or not collect statuses
         :param user_attr_dict: dict <attribute, func> for user. func takes user and attribute name
@@ -27,10 +35,10 @@ class Collector(object):
         self._collect_statuses = collect_statuses
         self._collect_users = collect_users
 
-        self._user_attr_dict = utils.default_user_dict if user_attr_dict is None else user_attr_dict
-        self._user_statuses_attr_dict = utils.default_user_tweets_dict if user_tweets_attr_dict is None \
+        self._user_attr_dict = dd.default_user_dict if user_attr_dict is None else user_attr_dict
+        self._user_statuses_attr_dict = dd.default_user_tweets_dict if user_tweets_attr_dict is None \
             else user_tweets_attr_dict
-        self._tweet_attr_dict = utils.default_tweet_dict if tweet_attr_dict is None else tweet_attr_dict
+        self._tweet_attr_dict = dd.default_tweet_dict if tweet_attr_dict is None else tweet_attr_dict
 
         # empty datasets
         self._users_dataset = pd.DataFrame(columns=np.array(np.concatenate((
@@ -60,34 +68,40 @@ class Collector(object):
     ############ COLLECTOR METHODS ############
     ###########################################
 
-    def collect_user(self, screen_name, filter_user=lambda x: True, filter_status=lambda x: True, n_statuses=20):
+    def collect_user(self,
+                     screen_name,
+                     filter_user=lambda x: True,
+                     filter_status=lambda x: True,
+                     n_statuses=20):
 
         """
         Collect all the information about a specific Account
         :param screen_name: the screen_name/id of the account
         :param filter_user: filtering function that takes as input the user obj and return True or False
                         indicating whether collect the user or not
+        :param filter_status: filtering function that takes as input the status obj and return True or False
+                        indicating whether collect the tweet or not
         :param n_statuses: number of statuses to collect for this user
         """
 
         user = self._api.get_user(screen_name)
 
         if filter_user(user):
-            if self.verbose:
-                print("Collecting user {}".format(screen_name))
+            logging.debug("Collecting user {}".format(screen_name))
 
             self._users_dataset = self._users_dataset.append(self._process_user(user=user,
                                                                                 filter_status=filter_status,
                                                                                 n_statuses=n_statuses),
                                                              ignore_index=True)
 
-            if self.verbose:
-                print("User collected!")
+            logging.debug("User collected!")
         else:
-            if self.verbose:
-                print("User skipped..")
+            logging.debug("User skipped..")
 
-    def _process_user(self, user, filter_status, n_statuses):
+    def _process_user(self,
+                      user,
+                      filter_status,
+                      n_statuses):
 
         """
         Process a single user, collecting all the information
@@ -101,7 +115,9 @@ class Collector(object):
 
         if self._user_statuses_attr_dict or self._collect_statuses:
             # collect user's statuses if the dict is not empty
-            tmp_tweets = self.collect_statuses(screen_name=user.screen_name, filter_status=filter_status, n_statuses=n_statuses)
+            tmp_tweets = self.collect_statuses(screen_name=user.screen_name,
+                                               filter_status=filter_status,
+                                               n_statuses=n_statuses)
             if self._user_statuses_attr_dict:
                 user_statuses_data = [func(tmp_tweets, attr_name) for attr_name, func in
                                       self._user_statuses_attr_dict.items()]
@@ -110,7 +126,10 @@ class Collector(object):
         raw_data = pd.Series(user_data, index=self._users_dataset.columns)
         return raw_data
 
-    def collect_statuses(self, screen_name, filter_status=lambda x: True, n_statuses=20):
+    def collect_statuses(self,
+                         screen_name,
+                         filter_status=lambda x: True,
+                         n_statuses=20):
 
         """
         Collect some tweets for a specific account, retrieving their attributes
@@ -127,10 +146,12 @@ class Collector(object):
 
         return tmp_statuses_set
 
-    def _process_status(self, status):
+    def _process_status(self,
+                        status):
 
-        """ Process a single tweet
-        :param status: Twitter tweet object that has to be processed, by extracting all its information
+        """
+        Process a single status
+        :param status: Twitter status object that has to be processed, by extracting all its information
         :return: pandas Series containing all the information for that tweet: raw_data """
 
         # status' attributes
@@ -143,18 +164,64 @@ class Collector(object):
 
         return raw_data
 
-    # TODO: collect data through json file
+    def collect_from_json(self,
+                          json_path,
+                          filter_user=lambda x: True,
+                          filter_status=lambda x: True,
+                          n_statuses=20):
+
+        """
+        Collects data (users and/or statuses) from a json file
+        :param json_path: path to the json file
+        :param filter_user: user filter function, tells whether collect user or not
+        :param filter_status: status filter function, tells whether collect status or not
+        :param n_statuses: number of statuses to collect for each user
+        """
+
+        try:
+            with open(json_path) as file:
+                for line in file:
+                    status = json.loads(line)
+                    self.collect_user(screen_name=status["user"]["screen_name"],
+                                      filter_user=filter_user,
+                                      filter_status=filter_status,
+                                      n_statuses=n_statuses)
+        except FileNotFoundError:
+            logging.warning("Json file not found.. make sure that the path is a valid one!")
+
+    def collect_statuses_from_json(self,
+                                   json_path,
+                                   filter_status=lambda x: True,
+                                   n_statuses=20):
+        """
+        Collects statuses from a json file
+        :param json_path: path to the json file
+        :param filter_status: status filter function, tells whether collect status or not
+        :param n_statuses: number of statuses to collect for each user
+        """
+
+        try:
+            with open(json_path) as file:
+                for line in file:
+                    status = json.loads(line)
+                    self.collect_statuses(screen_name=status["user"]["screen_name"],
+                                          filter_status=filter_status,
+                                          n_statuses=n_statuses)
+        except FileNotFoundError:
+            logging.warning("Json file not found.. make sure that the path is a valid one!")
 
     #################################################
     ################# CSV CONVERTER #################
     #################################################
 
-    def user_dataset_to_csv(self, filename, sep="\t"):
-        if self.verbose:
-            print("Saving users dataset at {}".format(filename))
+    def user_dataset_to_csv(self,
+                            filename,
+                            sep="\t"):
+        logging.debug("Saving users dataset at {}".format(filename))
         self._users_dataset.to_csv(path_or_buf=filename, sep=sep, index=False)
 
-    def tweets_dataset_to_csv(self, filename, sep="\t"):
-        if self.verbose:
-            print("Saving tweets dataset at {}".format(filename))
+    def tweets_dataset_to_csv(self,
+                              filename,
+                              sep="\t"):
+        logging.debug("Saving tweets dataset at {}".format(filename))
         self._statuses_dataset.to_csv(path_or_buf=filename, sep=sep, index=False)
