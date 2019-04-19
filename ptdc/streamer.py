@@ -1,3 +1,5 @@
+import logging
+
 import tweepy
 
 from ptdc import utils
@@ -19,13 +21,14 @@ class Streamer(tweepy.StreamListener):
         """
         Streamer constructor, it represents an offline streamer, store streaming data into a file
         :param api: tweepy api
-        :param time_limit: duration of the streaming, if None last forever
-        :param data_limit: number of data to collect at most (streaming data)
+        :param time_limit: duration of the streaming, if None don't consider so it will last until process interrupt
+        :param data_limit: number of data to collect at most (streaming data), if None don't consider
         :param json_path: file's location where saving the data collected, if None print on the std output
         :param filter_user: user filter function: User --> Bool
         :param filter_status: status filter function: Status --> Bool
         :param n_statuses: number of statuses to collect
-        :param verbose: verbosity"""
+        :param verbose: verbosity
+        """
 
         super(Streamer, self).__init__()
         self.api = api
@@ -42,14 +45,17 @@ class Streamer(tweepy.StreamListener):
 
     def on_connect(self):
 
-        """ called when the connection with
-        the streaming server is established """
+        """
+        Called when the connection with
+        the streaming server is established
+        """
+
+        logging.debug("connection with streaming server established!")
 
         self.start_time = utils.get_time()
         self.count = 0
 
-        if self.verbose:
-            print("Streaming started at {}".format(utils.get_date()))
+        logging.debug("Streaming started at {}".format(utils.get_date()))
 
         if self.json_path is not None:
             # open or create a new file
@@ -58,9 +64,12 @@ class Streamer(tweepy.StreamListener):
             except FileNotFoundError:
                 self.file = open(self.json_path, "w")
 
-    def on_data(self, raw_data):
+    def on_data(self,
+                raw_data):
 
         """ Called when new data is available """
+
+        logging.debug("New data received..")
 
         # if enough time was passed stop streaming or enough data was collected
         if (self.time_limit is not None and (utils.get_time() - self.start_time) > self.time_limit) \
@@ -70,11 +79,10 @@ class Streamer(tweepy.StreamListener):
                 self.file.close()
                 self.file = None
 
-            if self.verbose:
-                print("Streaming terminated at {}".format(utils.get_date()))
-                print("Streaming duration = {} seconds".format(self.time_limit))
+            logging.debug("Streaming terminated at {}".format(utils.get_date()))
+            logging.debug("Streaming duration = {} seconds".format(self.time_limit))
 
-            # stop connection to he streaming server
+            # stop connection to w/ streaming server
             return False
         elif self.file is not None:
             # print the raw data on the file
@@ -85,12 +93,22 @@ class Streamer(tweepy.StreamListener):
         super(Streamer, self).on_data(raw_data=raw_data)
 
     def on_error(self, status_code):
-        print(status_code)
+        logging.error("Streaming error occurred: {}".format(status_code))
 
     def stream(self, follow=None, track=None, is_async=False, locations=None,
                stall_warnings=False, languages=None, encoding='utf8', filter_level=None):
 
-        """ start the streaming in according to the filtering options passed as parameters """
+        """
+        Start the streaming in according to the filtering options passed as parameters
+        :param follow:
+        :param track:
+        :param is_async:
+        :param locations:
+        :param stall_warnings:
+        :param languages:
+        :param encoding:
+        :param filter_level:
+        """
 
         stream_ = tweepy.Stream(auth=self.api.auth, listener=self)
         stream_.filter(follow=follow, track=track, is_async=is_async, locations=locations,
@@ -99,7 +117,7 @@ class Streamer(tweepy.StreamListener):
 
 class OnlineStreamer(Streamer):
 
-    """ Online Streamer that collects user's data and/or statuses's data during the streaming, e.g. online """
+    """ Online Streamer that collects users and/or statuses during the streaming, e.g. online """
 
     def __init__(self,
                  api,
