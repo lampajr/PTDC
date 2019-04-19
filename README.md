@@ -1,6 +1,6 @@
 #PTDC: PYTHON TWITTER DATA COLLECTOR
 
-####Python library that provides methods useful for collecting data from Twitter Social Network.
+Python library that provides methods useful for collecting data from Twitter Social Network.
 
 ## INSTALLATION
 ##### type the following command:
