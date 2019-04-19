@@ -4,7 +4,7 @@
 
 ## INSTALLATION
 ##### type the following command:
-    ~$ pip install ptdc
+    ~$ pip install --index-url https://test.pypi.org/simple/ ptdc
 
 ## USAGE
 ### Define tokens
