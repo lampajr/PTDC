@@ -5,7 +5,7 @@ Python Twitter Data Collector library initialization
 :license: MIT, see LICENSE for more details.
 """
 
-__version__ = '1.1.0'
+__version__ = '1.0.0'
 __author__ = 'Andrea Lamparelli'
 __license__ = "MIT"
 
