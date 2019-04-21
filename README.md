@@ -25,7 +25,8 @@
                           access_token_secret=access_token_secret)
 
 ### Create Online Streamer w/ default collector
-    streamer = st.OnlineStreamer(api=api, collector=None, time_limit=45, data_limit=None)
+    # NB: you can create your own collector and put it here as parameter
+    streamer = st.OnlineStreamer(apis=[api], collector=None, time_limit=45, data_limit=None)
 
 ### Start streaming on some topics, on the current thread
     streamer.stream(track=['famous', 'web', 'vip'], is_async=False)
