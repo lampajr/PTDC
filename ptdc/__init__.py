@@ -5,14 +5,21 @@ Python Twitter Data Collector library initialization
 :license: MIT, see LICENSE for more details.
 """
 
-__version__ = '0.2.0'
+from ptdc.collector import Collector
+from ptdc.streamer import Streamer, OnlineStreamer, OnlineStatusStreamer
+from ptdc.support import authenticate, multiple_authentication
+
+__version__ = '0.1.5'
 __author__ = 'Andrea Lamparelli'
 __license__ = "MIT"
 
 __all__ = [
-    'collector',
+    'Collector',
     'data',
-    'streamer',
-    'support',
+    'Streamer',
+    'OnlineStreamer',
+    'OnlineStatusStreamer',
+    'authenticate',
+    'multiple_authentication',
     '__version__'
 ]

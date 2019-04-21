@@ -57,7 +57,8 @@ class Collector(object):
 
         # Twitter api for making query
         self._apis = apis
-        self._api = self._apis[0]
+        self._idx = 0
+        self._api = self._apis[self._idx]
 
     def get_users_dataset(self):
 
@@ -74,6 +75,13 @@ class Collector(object):
         """
 
         return self._statuses_dataset
+
+    def _change_api(self):
+
+        """ Change the current API used for querying """
+
+        self._idx = (self._idx + 1) % len(self._apis)
+        self._api = self._apis[self._idx]
 
     ###########################################
     ############ COLLECTOR METHODS ############
@@ -95,19 +103,29 @@ class Collector(object):
         :param n_statuses: number of statuses to collect for this user
         """
 
-        user = self._api.get_user(screen_name)
+        try:
+            user = self._api.get_user(screen_name)
+            if filter_user(user):
+                logging.debug("Collecting user {}".format(screen_name))
 
-        if filter_user(user):
-            logging.debug("Collecting user {}".format(screen_name))
+                self._users_dataset = self._users_dataset.append(self._process_user(user=user,
+                                                                                    filter_status=filter_status,
+                                                                                    n_statuses=n_statuses),
+                                                                 ignore_index=True)
 
-            self._users_dataset = self._users_dataset.append(self._process_user(user=user,
-                                                                                filter_status=filter_status,
-                                                                                n_statuses=n_statuses),
-                                                             ignore_index=True)
-
-            logging.debug("User collected!")
-        else:
-            logging.debug("User skipped..")
+                logging.debug("User collected!")
+            else:
+                logging.debug("User skipped..")
+        except tweepy.RateLimitError as rle:
+            # change the API obj and retry until at least one is free to perform the query
+            logging.warning("Rate limit exceeded: ".format(rle.message))
+            self._change_api()
+            self.collect_user(screen_name=screen_name,
+                              filter_user=filter_user,
+                              filter_status=filter_status,
+                              n_statuses=n_statuses)
+        except tweepy.TweepError:
+            pass
 
     def _process_user(self,
                       user,
