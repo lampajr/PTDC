@@ -143,7 +143,7 @@ class Streamer(tweepy.StreamListener):
 
         """
         Start the streaming in according to the filtering options passed as parameters
-        :param follow, track, is_async, locations, stall_warnings, languages,
+        :params follow, track, is_async, locations, stall_warnings, languages,
                encoding, filter_level: for more details about the parameters see Tweepy Stream class
         """
 
