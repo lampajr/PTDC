@@ -15,7 +15,7 @@ if __name__ == '__main__':
 
     # Create Online Streamer that will collect data for 45 seconds
     # Using collector=None the streamer will create a default collector
-    streamer = OnlineStreamer(api=api, collector=None, time_limit=45, data_limit=None)
+    streamer = OnlineStreamer(apis=[api], collector=None, time_limit=45, data_limit=None)
 
     # Start streaming on some topics, on the current thread
     streamer.stream(track=['famous', 'web', 'vip'], is_async=False)
