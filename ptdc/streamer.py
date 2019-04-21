@@ -21,39 +21,49 @@ from ptdc.collector import Collector
 class Streamer(tweepy.StreamListener):
 
     def __init__(self,
-                 api,
+                 apis,
                  time_limit=None,
                  data_limit=None,
                  json_path="../data/default_stream_file.json",
                  filter_user=lambda x: True,
                  filter_status=lambda x: True,
                  n_statuses=20,
+                 attempts=0,
+                 backup=None,
                  verbose=True):
 
         """
         Streamer constructor, it represents an offline streamer, store streaming data into a file
-        :param api: tweepy api
+        :param apis: list of tweepy APIs
         :param time_limit: duration of the streaming, if None don't consider so it will last until process interrupt
         :param data_limit: number of data to collect at most (streaming data), if None don't consider
         :param json_path: file's location where saving the data collected, if None print on the std output
         :param filter_user: user filter function: User --> Bool
         :param filter_status: status filter function: Status --> Bool
         :param n_statuses: number of statuses to collect
+        :param attempts: number of reconnection attempts to perform in case of streaming failure, first connection
+                         excluded
+        :param backup: every how many seconds to backup, if None no backup is scheduled
         :param verbose: verbosity
         """
 
         super(Streamer, self).__init__()
-        self.api = api
+        self.apis = apis
+        self._idx = 0
         self.time_limit = time_limit
         self.data_limit = data_limit
         self.json_path = json_path
         self.filter_user = filter_user
         self.filter_status = filter_status
         self.n_statuses = n_statuses
+        self.attempts = attempts
+        self.backup = backup
+        self.verbose = verbose
+
         self.start_time = 0
+        self.last_backup = 0
         self.count = 0
         self.file = None
-        self.verbose = verbose
 
     def on_connect(self):
 
@@ -65,6 +75,7 @@ class Streamer(tweepy.StreamListener):
         logging.debug("connection with streaming server established!")
 
         self.start_time = support.get_time()
+        self.last_backup = self.start_time
         self.count = 0
 
         logging.debug("Streaming started at {}".format(support.get_date()))
@@ -107,6 +118,12 @@ class Streamer(tweepy.StreamListener):
     def on_error(self, status_code):
         logging.error("Streaming error occurred: {}".format(status_code))
 
+    def check_backup(self):
+
+        """ Checks whether is time to backup data """
+
+        return self.backup is not None and (support.get_time() - self.last_backup) > self.backup
+
     def stream(self,
                follow=None,
                track=None,
@@ -119,7 +136,7 @@ class Streamer(tweepy.StreamListener):
 
         """
         Start the streaming in according to the filtering options passed as parameters
-        For more detailed description of the parameters see Tweepy Stream class
+        For more details about the parameters see Tweepy Stream class
         :param follow:
         :param track:
         :param is_async:
@@ -130,9 +147,36 @@ class Streamer(tweepy.StreamListener):
         :param filter_level:
         """
 
-        stream_ = tweepy.Stream(auth=self.api.auth, listener=self)
-        stream_.filter(follow=follow, track=track, is_async=is_async, locations=locations,
-                       stall_warnings=stall_warnings, languages=languages, encoding=encoding, filter_level=filter_level)
+        try:
+            stream_ = tweepy.Stream(auth=self.apis[self._idx].auth, listener=self)
+            stream_.filter(follow=follow, track=track, is_async=is_async, locations=locations,
+                           stall_warnings=stall_warnings, languages=languages, encoding=encoding, filter_level=filter_level)
+        except tweepy.RateLimitError:
+            # change API, if any and try to restart streaming
+            self._idx = (self._idx + 1) % len(self.apis)
+            self.stream(follow=follow,
+                        track=track,
+                        is_async=is_async,
+                        locations=locations,
+                        stall_warnings=stall_warnings,
+                        languages=languages,
+                        encoding=encoding,
+                        filter_level=filter_level)
+        except tweepy.TweepError as e:
+            if self.attempts == 0:
+                logging.error("Limit number of attempts reached!")
+                logging.error(e)
+            else:
+                logging.warning("Reconnecting...")
+                self.attempts -= 1
+                self.stream(follow=follow,
+                            track=track,
+                            is_async=is_async,
+                            locations=locations,
+                            stall_warnings=stall_warnings,
+                            languages=languages,
+                            encoding=encoding,
+                            filter_level=filter_level)
 
 
 class OnlineStreamer(Streamer):
@@ -140,7 +184,7 @@ class OnlineStreamer(Streamer):
     """ Online Streamer that collects users and/or statuses during the streaming, e.g. online """
 
     def __init__(self,
-                 api,
+                 apis,
                  collector=None,
                  time_limit=None,
                  data_limit=None,
@@ -149,7 +193,7 @@ class OnlineStreamer(Streamer):
                  filter_status=lambda x: True,
                  verbose=True):
 
-        super(OnlineStreamer, self).__init__(api=api,
+        super(OnlineStreamer, self).__init__(apis=apis,
                                              time_limit=time_limit,
                                              data_limit=data_limit,
                                              json_path=json_path,
@@ -158,11 +202,15 @@ class OnlineStreamer(Streamer):
                                              verbose=verbose)
 
         # collector needed for online data collection
-        self.collector = Collector(api=self.api) if collector is None else collector
+        self.collector = Collector(apis=self.apis) if collector is None else collector
 
     def on_status(self, status):
 
         """ called when raw data is received from stream """
+
+        if self.check_backup():
+            self.backup = support.get_time()
+            self.collector.backup()
 
         self.collector.collect_user(screen_name=status.user.screen_name,
                                     filter_user=self.filter_user,
@@ -177,7 +225,7 @@ class OnlineStatusStreamer(Streamer):
     """ Online Streamer that collects statuses into DataFrame during streaming """
 
     def __init__(self,
-                 api,
+                 apis,
                  collector=None,
                  time_limit=None,
                  data_limit=None,
@@ -186,7 +234,7 @@ class OnlineStatusStreamer(Streamer):
                  filter_status=lambda x: True,
                  verbose=True):
 
-        super(OnlineStatusStreamer, self).__init__(api=api,
+        super(OnlineStatusStreamer, self).__init__(apis=apis,
                                                    time_limit=time_limit,
                                                    data_limit=data_limit,
                                                    json_path=json_path,
@@ -195,11 +243,15 @@ class OnlineStatusStreamer(Streamer):
                                                    verbose=verbose)
 
         # collector needed for online data collection
-        self.collector = Collector(api=self.api) if collector is None else collector
+        self.collector = Collector(apis=self.apis, collect_users=False) if collector is None else collector
 
     def on_status(self, status):
 
         """ called when raw data is received from stream """
+
+        if self.check_backup():
+            self.backup = support.get_time()
+            self.collector.backup()
 
         self.collector.collect_statuses(screen_name=status.user.screen_name,
                                         filter_status=self.filter_status,
