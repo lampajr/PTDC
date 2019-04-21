@@ -22,4 +22,4 @@ if __name__ == '__main__':
 
     # After streaming ended, save DataFrame generated into csv files
     streamer.collector.user_dataset_to_csv(filename="../data/accounts.csv")
-    streamer.collector.tweets_dataset_to_csv(filename="../data/statuses.csv")
+    streamer.collector.statuses_dataset_to_csv(filename="../data/statuses.csv")

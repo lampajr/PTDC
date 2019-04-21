@@ -16,6 +16,7 @@ import pandas as pd
 import tweepy
 
 from ptdc import data as dd
+from ptdc.support import get_time
 
 
 class Collector(object):
@@ -30,6 +31,7 @@ class Collector(object):
                  user_attr_dict=None,
                  user_tweets_attr_dict=None,
                  tweet_attr_dict=None,
+                 retry=0,
                  verbose=True):
         """
         Data Collector constructor
@@ -39,6 +41,7 @@ class Collector(object):
         :param user_attr_dict: dict <attribute, func> for user. func takes user and attribute name
         :param user_tweets_attr_dict: dict <attribute, func> for user. func takes tweets dataframe and attribute name
         :param tweet_attr_dict: dict <attribute, func> for tweet. function takes tweet and attribute name
+        :param retry: number of times to retry a query in case of TweepError, default 0
         :param verbose: bool, verbosity
         """
         self.verbose = verbose
@@ -55,9 +58,14 @@ class Collector(object):
             np.array(list(self._user_attr_dict.keys())), np.array(list(self._user_statuses_attr_dict.keys()))))))
         self._statuses_dataset = pd.DataFrame(columns=np.array(list(self._tweet_attr_dict.keys())))
 
-        # Twitter api for making query
+        self.retry = retry
+
+        self.start_time = get_time(millis=True)
+
+        # Twitter apis for making query
         self._apis = apis
         self._idx = 0
+        # current API
         self._api = self._apis[self._idx]
 
     def get_users_dataset(self):
@@ -91,7 +99,8 @@ class Collector(object):
                      screen_name,
                      filter_user=lambda x: True,
                      filter_status=lambda x: True,
-                     n_statuses=20):
+                     n_statuses=20,
+                     attempt=0):
 
         """
         Collect all the information about a specific Account
@@ -101,31 +110,39 @@ class Collector(object):
         :param filter_status: filtering function that takes as input the status obj and return True or False
                         indicating whether collect the tweet or not
         :param n_statuses: number of statuses to collect for this user
+        :param attempt: current attempt, start from 0
         """
 
         try:
-            user = self._api.get_user(screen_name)
-            if filter_user(user):
-                logging.debug("Collecting user {}".format(screen_name))
+            if attempt <= self.retry:
+                user = self._api.get_user(screen_name)
+                if filter_user(user):
+                    logging.debug("Collecting user {}".format(screen_name))
 
-                self._users_dataset = self._users_dataset.append(self._process_user(user=user,
-                                                                                    filter_status=filter_status,
-                                                                                    n_statuses=n_statuses),
-                                                                 ignore_index=True)
+                    self._users_dataset = self._users_dataset.append(self._process_user(user=user,
+                                                                                        filter_status=filter_status,
+                                                                                        n_statuses=n_statuses),
+                                                                     ignore_index=True)
 
-                logging.debug("User collected!")
+                    logging.debug("User collected!")
+                else:
+                    logging.debug("User skipped..")
             else:
-                logging.debug("User skipped..")
-        except tweepy.RateLimitError as rle:
+                logging.debug("Attempts limit of {} reached!".format(self.retry))
+        except tweepy.RateLimitError:
             # change the API obj and retry until at least one is free to perform the query
-            logging.warning("Rate limit exceeded: ".format(rle.message))
+            logging.warning("Rate limit exceeded!")
             self._change_api()
             self.collect_user(screen_name=screen_name,
                               filter_user=filter_user,
                               filter_status=filter_status,
                               n_statuses=n_statuses)
         except tweepy.TweepError:
-            pass
+            self.collect_user(screen_name,
+                              filter_user=lambda x: True,
+                              filter_status=lambda x: True,
+                              n_statuses=20,
+                              attempt=attempt+1)
 
     def _process_user(self,
                       user,
@@ -243,14 +260,24 @@ class Collector(object):
     ################# CSV CONVERTER #################
     #################################################
 
+    def backup(self):
+
+        """ Backup method, stores used dataset into dotted csv files in the current directory """
+
+        if self._collect_users:
+            self.user_dataset_to_csv(filename=".users-backup{}".format(self.start_time))
+
+        if self._collect_statuses:
+            self.statuses_dataset_to_csv(filename=".statuses-backup{}".format(self.start_time))
+
     def user_dataset_to_csv(self,
                             filename,
                             sep="\t"):
         logging.debug("Saving users dataset at {}".format(filename))
         self._users_dataset.to_csv(path_or_buf=filename, sep=sep, index=False)
 
-    def tweets_dataset_to_csv(self,
-                              filename,
-                              sep="\t"):
+    def statuses_dataset_to_csv(self,
+                                filename,
+                                sep="\t"):
         logging.debug("Saving tweets dataset at {}".format(filename))
         self._statuses_dataset.to_csv(path_or_buf=filename, sep=sep, index=False)
