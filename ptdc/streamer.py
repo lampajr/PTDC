@@ -192,6 +192,9 @@ class OnlineStreamer(Streamer):
                  json_path="../data/default_stream_file.json",
                  filter_user=lambda x: True,
                  filter_status=lambda x: True,
+                 n_statuses=20,
+                 attempts=0,
+                 backup=None,
                  verbose=True):
 
         super(OnlineStreamer, self).__init__(apis=apis,
@@ -200,6 +203,9 @@ class OnlineStreamer(Streamer):
                                              json_path=json_path,
                                              filter_user=filter_user,
                                              filter_status=filter_status,
+                                             n_statuses=n_statuses,
+                                             attempts=attempts,
+                                             backup=backup,
                                              verbose=verbose)
 
         # collector needed for online data collection
@@ -233,6 +239,9 @@ class OnlineStatusStreamer(Streamer):
                  json_path="../data/default_stream_file.json",
                  filter_user=lambda x: True,
                  filter_status=lambda x: True,
+                 n_statuses=20,
+                 attempts=0,
+                 backup=None,
                  verbose=True):
 
         super(OnlineStatusStreamer, self).__init__(apis=apis,
@@ -241,6 +250,9 @@ class OnlineStatusStreamer(Streamer):
                                                    json_path=json_path,
                                                    filter_user=filter_user,
                                                    filter_status=filter_status,
+                                                   n_statuses=n_statuses,
+                                                   attempts=attempts,
+                                                   backup=backup,
                                                    verbose=verbose)
 
         # collector needed for online data collection
