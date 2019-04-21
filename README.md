@@ -13,10 +13,10 @@
    
 ### Define tokens
     # change these tokens with yours, see Twitter develeopers for more details to how obtain them
-    consumer_key = "fsvd..."
-    consumer_key_secret = "derfWdew3..."
-    access_token = "dbAD..."
-    access_token_secret = "J4O..."
+    consumer_key = "xxxxxxxxxxx"
+    consumer_key_secret = "xxxxxxxxxxxxx"
+    access_token = "xxxxxxxxxxxxxxxxxxxxxx"
+    access_token_secret = "xxxxxxxxxxxxxxxxxx"
     
 ### Create the default API object of tweepy
     api = sp.authenticate(consumer_key=consumer_key,
