@@ -2,10 +2,10 @@ from ptdc.streamer import OnlineStreamer
 from ptdc.support import authenticate
 
 if __name__ == '__main__':
-    consumer_key = "fsvd..."
-    consumer_key_secret = "derfWdew3..."
-    access_token = "dbAD..."
-    access_token_secret = "J4O..."
+    consumer_key = "xxxxxxxxxxxx"
+    consumer_key_secret = "xxxxxxxxxxxxxx"
+    access_token = "xxxxxxxxxxxxxxxxxxxxxxxx"
+    access_token_secret = "xxxxxxxxxxxxxx"
 
     # Create the default API object of tweepy using provided authentication method
     api = authenticate(consumer_key=consumer_key,
