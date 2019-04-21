@@ -7,6 +7,10 @@
     ~$ pip install --index-url https://test.pypi.org/simple/ ptdc
 
 ## USAGE
+### Import modules
+    from ptdc import streamer as st
+    from ptdc import support as sp
+   
 ### Define tokens
     # change these tokens with yours, see Twitter develeopers for more details to how obtain them
     consumer_key = "fsvd..."
@@ -14,16 +18,14 @@
     access_token = "dbAD..."
     access_token_secret = "J4O..."
     
-
-
 ### Create the default API object of tweepy
-    api = authenticate(consumer_key=consumer_key,
-                       consumer_key_secret=consumer_key_secret,
-                       access_token=access_token,
-                       access_token_secret=access_token_secret)
+    api = sp.authenticate(consumer_key=consumer_key,
+                          consumer_key_secret=consumer_key_secret,
+                          access_token=access_token,
+                          access_token_secret=access_token_secret)
 
 ### Create Online Streamer w/ default collector
-    streamer = OnlineStreamer(api=api, collector=None, time_limit=45, data_limit=None)
+    streamer = st.OnlineStreamer(api=api, collector=None, time_limit=45, data_limit=None)
 
 ### Start streaming on some topics, on the current thread
     streamer.stream(track=['famous', 'web', 'vip'], is_async=False)

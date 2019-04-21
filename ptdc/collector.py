@@ -24,7 +24,7 @@ class Collector(object):
     provides methods for handling the data, adding new users, removing users.."""
 
     def __init__(self,
-                 api,
+                 apis,
                  collect_users=True,
                  collect_statuses=True,
                  user_attr_dict=None,
@@ -33,7 +33,7 @@ class Collector(object):
                  verbose=True):
         """
         Data Collector constructor
-        :param api: tweepy api used for querying Twitter
+        :param apis: list of tweepy apis used for querying Twitter
         :param collect_users: bool, tells whether or not collect users
         :param collect_statuses: bool, tells whether or not collect statuses
         :param user_attr_dict: dict <attribute, func> for user. func takes user and attribute name
@@ -56,7 +56,8 @@ class Collector(object):
         self._statuses_dataset = pd.DataFrame(columns=np.array(list(self._tweet_attr_dict.keys())))
 
         # Twitter api for making query
-        self._api = api
+        self._apis = apis
+        self._api = self._apis[0]
 
     def get_users_dataset(self):
 

@@ -100,6 +100,70 @@ def get_retweeted_status(status):
     except AttributeError:
         return None
 
+def multiple_authentication(tokens,
+                            host='api.twitter.com',
+                            search_host='search.twitter.com',
+                            upload_host='upload.twitter.com',
+                            cache=None, api_root='/1.1',
+                            search_root='', upload_root='/1.1',
+                            retry_count=0,
+                            retry_delay=0, retry_errors=None,
+                            timeout=60, parser=None,
+                            compression=False,
+                            wait_on_rate_limit=True,
+                            wait_on_rate_limit_notify=True,
+                            proxy=''):
+    """
+    Helpful method that allow user to directly authenticate multiple times and generate multiple APIs
+    for querying Twitter
+    :param tokens: list of list each of one has the following structure: consumer_key, consumer_key_secret,
+                   access_token, access_token_secret,
+
+    Tweepy API parameters, for a more detailed description see Tweepy API documentation
+    :param host:
+    :param search_host:
+    :param upload_host:
+    :param cache:
+    :param api_root:
+    :param search_root:
+    :param upload_root:
+    :param retry_count:
+    :param retry_delay:
+    :param retry_errors:
+    :param timeout:
+    :param parser:
+    :param compression:
+    :param wait_on_rate_limit:
+    :param wait_on_rate_limit_notify:
+    :param proxy:
+    :return: list of API objects
+    """
+
+    auths = []
+    for consumer_key, consumer_key_secret, access_token, access_token_secret in tokens:
+        auths.append(authenticate(consumer_key=consumer_key,
+                                  consumer_key_secret=consumer_key_secret,
+                                  access_token=access_token,
+                                  access_token_secret=access_token_secret,
+                                  host=host,
+                                  search_host=search_host,
+                                  upload_host=upload_host,
+                                  cache=cache,
+                                  api_root=api_root,
+                                  search_root=search_root,
+                                  upload_root=upload_root,
+                                  retry_count=retry_count,
+                                  retry_delay=retry_delay,
+                                  retry_errors=retry_errors,
+                                  timeout=timeout,
+                                  parser=parser,
+                                  compression=compression,
+                                  wait_on_rate_limit=wait_on_rate_limit,
+                                  wait_on_rate_limit_notify=wait_on_rate_limit_notify,
+                                  proxy=proxy))
+    return auths
+
+
 def authenticate(consumer_key,
                  consumer_key_secret,
                  access_token,
@@ -120,7 +184,25 @@ def authenticate(consumer_key,
     """
     Helpful method that allow user to directly authenticate and generate the API for querying Twitter
 
-    Authentication tokens:
+    Authentication tokens:_auth = tweepy.OAuthHandler(consumer_key, consumer_key_secret)
+    _auth.set_access_token(access_token, access_token_secret)
+    _api = tweepy.API(auth_handler=_auth,
+                      host=host,
+                      search_host=search_host,
+                      upload_host=upload_host,
+                      cache=cache,
+                      api_root=api_root,
+                      search_root=search_root,
+                      upload_root=upload_root,
+                      retry_count=retry_count,
+                      retry_delay=retry_delay,
+                      retry_errors=retry_errors,
+                      timeout=timeout,
+                      parser=parser,
+                      compression=compression,
+                      wait_on_rate_limit=wait_on_rate_limit,
+                      wait_on_rate_limit_notify=wait_on_rate_limit_notify,
+                      proxy=proxy)
     :param consumer_key:
     :param consumer_key_secret:
     :param access_token:
