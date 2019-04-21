@@ -116,7 +116,14 @@ class Streamer(tweepy.StreamListener):
         super(Streamer, self).on_data(raw_data=raw_data)
 
     def on_error(self, status_code):
-        logging.error("Streaming error occurred: {}".format(status_code))
+        if status_code == 401:
+            # UNAUTHORIZED
+            raise tweepy.TweepError(reason="Missing or incorrect authentication credentials", api_code=status_code)
+        elif status_code == 88:
+            # RATE LIMIT
+            raise tweepy.RateLimitError(reason="The request limit for this resource has been reached")
+        else:
+            raise tweepy.TweepError("Unhandled exception: {}".format(status_code), api_code=status_code)
 
     def check_backup(self):
 
@@ -150,7 +157,8 @@ class Streamer(tweepy.StreamListener):
         try:
             stream_ = tweepy.Stream(auth=self.apis[self._idx].auth, listener=self)
             stream_.filter(follow=follow, track=track, is_async=is_async, locations=locations,
-                           stall_warnings=stall_warnings, languages=languages, encoding=encoding, filter_level=filter_level)
+                           stall_warnings=stall_warnings, languages=languages, encoding=encoding,
+                           filter_level=filter_level)
         except tweepy.RateLimitError:
             # change API, if any and try to restart streaming
             self._idx = (self._idx + 1) % len(self.apis)
