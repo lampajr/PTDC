@@ -178,7 +178,8 @@ class Streamer(tweepy.StreamListener):
                 logging.warning(e)
                 logging.warning("Reconnecting...")
                 # sleep for 5 seconds
-                self.attempts -= 1
+                if self.attempts is not None :
+                    self.attempts -= 1
                 continue
 
         if self.attempts is not None and self.attempts == 0 and not self._closed:
