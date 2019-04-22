@@ -11,6 +11,9 @@ OnlineStatusesStreamer -> it collects data during streaming, but in this case on
 """
 
 import logging
+import time
+
+from urllib3.exceptions import ProtocolError
 
 import tweepy
 
@@ -28,7 +31,7 @@ class Streamer(tweepy.StreamListener):
                  filter_user=lambda x: True,
                  filter_status=lambda x: True,
                  n_statuses=20,
-                 attempts=0,
+                 attempts=None,
                  backup=None,
                  verbose=True):
 
@@ -42,7 +45,7 @@ class Streamer(tweepy.StreamListener):
         :param filter_status: status filter function: Status --> Bool
         :param n_statuses: number of statuses to collect
         :param attempts: number of reconnection attempts to perform in case of streaming failure, first connection
-                         excluded
+                         excluded, if None always retry to reconnect
         :param backup: every how many seconds to backup, if None no backup is scheduled
         :param verbose: verbosity
         """
@@ -64,6 +67,7 @@ class Streamer(tweepy.StreamListener):
         self.last_backup = 0
         self.count = 0
         self.file = None
+        self._closed = False
 
     def on_connect(self):
 
@@ -105,6 +109,7 @@ class Streamer(tweepy.StreamListener):
             logging.debug("Streaming terminated at {}".format(support.get_date()))
             logging.debug("Streaming duration = {} seconds".format(self.time_limit))
 
+            self._closed = True
             # stop connection to w/ streaming server
             return False
         elif self.file is not None:
@@ -116,6 +121,10 @@ class Streamer(tweepy.StreamListener):
         super(Streamer, self).on_data(raw_data=raw_data)
 
     def on_error(self, status_code):
+
+        """Called when a non-200 status code is returned"""
+
+        logging.warning("status code={}".format(status_code))
         if status_code == 401:
             # UNAUTHORIZED
             raise tweepy.TweepError(reason="Missing or incorrect authentication credentials", api_code=status_code)
@@ -124,6 +133,12 @@ class Streamer(tweepy.StreamListener):
             raise tweepy.RateLimitError(reason="The request limit for this resource has been reached")
         else:
             raise tweepy.TweepError("Unhandled exception: {}".format(status_code), api_code=status_code)
+
+    def on_exception(self, exception):
+
+        """Called when an unhandled exception occurs."""
+
+        pass
 
     def check_backup(self):
 
@@ -136,7 +151,7 @@ class Streamer(tweepy.StreamListener):
                track=None,
                is_async=False,
                locations=None,
-               stall_warnings=False,
+               stall_warnings=True,
                languages=None,
                encoding='utf8',
                filter_level=None):
@@ -147,37 +162,27 @@ class Streamer(tweepy.StreamListener):
                encoding, filter_level: for more details about the parameters see Tweepy Stream class
         """
 
-        try:
-            stream_ = tweepy.Stream(auth=self.apis[self._idx].auth, listener=self)
-            stream_.filter(follow=follow, track=track, is_async=is_async, locations=locations,
-                           stall_warnings=stall_warnings, languages=languages, encoding=encoding,
-                           filter_level=filter_level)
-        except tweepy.RateLimitError:
-            # change API, if any and try to restart streaming
-            self._idx = (self._idx + 1) % len(self.apis)
-            self.stream(follow=follow,
-                        track=track,
-                        is_async=is_async,
-                        locations=locations,
-                        stall_warnings=stall_warnings,
-                        languages=languages,
-                        encoding=encoding,
-                        filter_level=filter_level)
-        except tweepy.TweepError as e:
-            if self.attempts == 0:
-                logging.error("Limit number of attempts reached!")
-                logging.error(e)
-            else:
+        while (self.attempts is None or self.attempts > 0) and not self._closed:
+            try:
+                stream_ = tweepy.Stream(auth=self.apis[self._idx].auth, listener=self)
+                stream_.filter(follow=follow, track=track, is_async=is_async, locations=locations,
+                               stall_warnings=stall_warnings, languages=languages, encoding=encoding,
+                               filter_level=filter_level)
+            except tweepy.RateLimitError as e:
+                # change API, if any and try to restart streaming
+                logging.warning(e)
+                logging.warning("Changing API..")
+                self._idx = (self._idx + 1) % len(self.apis)
+                continue
+            except (ProtocolError, tweepy.TweepError) as e:
+                logging.warning(e)
                 logging.warning("Reconnecting...")
+                # sleep for 5 seconds
                 self.attempts -= 1
-                self.stream(follow=follow,
-                            track=track,
-                            is_async=is_async,
-                            locations=locations,
-                            stall_warnings=stall_warnings,
-                            languages=languages,
-                            encoding=encoding,
-                            filter_level=filter_level)
+                continue
+
+        if self.attempts is not None and self.attempts == 0 and not self._closed:
+            logging.error("Limit number of attempts reached!!")
 
 
 class OnlineStreamer(Streamer):
@@ -216,7 +221,7 @@ class OnlineStreamer(Streamer):
         """ called when raw data is received from stream """
 
         if self.check_backup():
-            self.backup = support.get_time()
+            self.last_backup = support.get_time()
             self.collector.backup()
 
         self.collector.collect_user(screen_name=status.user.screen_name,
@@ -263,7 +268,7 @@ class OnlineStatusStreamer(Streamer):
         """ called when raw data is received from stream """
 
         if self.check_backup():
-            self.backup = support.get_time()
+            self.last_backup = support.get_time()
             self.collector.backup()
 
         self.collector.collect_statuses(screen_name=status.user.screen_name,

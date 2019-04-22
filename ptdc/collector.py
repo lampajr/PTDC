@@ -31,7 +31,7 @@ class Collector(object):
                  user_attr_dict=None,
                  user_tweets_attr_dict=None,
                  tweet_attr_dict=None,
-                 retry=0,
+                 retry=3,
                  verbose=True):
         """
         Data Collector constructor
@@ -61,6 +61,7 @@ class Collector(object):
         self.retry = retry
 
         self.start_time = get_time(millis=True)
+        self.n_backups = 0
 
         # Twitter apis for making query
         self._apis = apis
@@ -89,6 +90,7 @@ class Collector(object):
         """ Change the current API used for querying """
 
         self._idx = (self._idx + 1) % len(self._apis)
+        logging.warning("Changing API.. {}".format(self._idx))
         self._api = self._apis[self._idx]
 
     ###########################################
@@ -129,9 +131,9 @@ class Collector(object):
                     logging.debug("User skipped..")
             else:
                 logging.debug("Attempts limit of {} reached!".format(self.retry))
-        except tweepy.RateLimitError:
+        except tweepy.RateLimitError as e:
             # change the API obj and retry until at least one is free to perform the query
-            logging.warning("Rate limit exceeded!")
+            logging.warning(e)
             self._change_api()
             self.collect_user(screen_name=screen_name,
                               filter_user=filter_user,
@@ -264,11 +266,14 @@ class Collector(object):
 
         """ Backup method, stores used dataset into dotted csv files in the current directory """
 
+        self.n_backups += 1
+        logging.warning("Backup.. n.{}".format(self.n_backups))
+
         if self._collect_users:
-            self.user_dataset_to_csv(filename=".users-backup{}".format(self.start_time))
+            self.user_dataset_to_csv(filename=".users-backup{}.csv".format(self.start_time))
 
         if self._collect_statuses:
-            self.statuses_dataset_to_csv(filename=".statuses-backup{}".format(self.start_time))
+            self.statuses_dataset_to_csv(filename=".statuses-backup{}.csv".format(self.start_time))
 
     def user_dataset_to_csv(self,
                             filename,
