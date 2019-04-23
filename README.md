@@ -8,8 +8,8 @@
 
 ## USAGE
 ### Import modules
-    from ptdc import streamer as st
-    from ptdc import support as sp
+    from ptdc import OnlineStreamer
+    from ptdc import authencticate
    
 ### Define tokens
     # change these tokens with yours, see Twitter develeopers for more details to how obtain them
@@ -19,14 +19,14 @@
     access_token_secret = "xxxxxxxxxxxxxxxxxx"
     
 ### Create the default API object of tweepy
-    api = sp.authenticate(consumer_key=consumer_key,
-                          consumer_key_secret=consumer_key_secret,
-                          access_token=access_token,
-                          access_token_secret=access_token_secret)
+    api = authenticate(consumer_key=consumer_key,
+                       consumer_key_secret=consumer_key_secret,
+                       access_token=access_token,
+                       access_token_secret=access_token_secret)
 
 ### Create Online Streamer w/ default collector
     # NB: you can create your own collector and put it here as parameter
-    streamer = st.OnlineStreamer(apis=[api], collector=None, time_limit=45, data_limit=None, attempt=None)
+    streamer = OnlineStreamer(apis=[api], collector=None, time_limit=45, data_limit=None, attempt=None)
 
 ### Start streaming on some topics, on the current thread
     streamer.stream(track=['python', 'dev', 'coding'], is_async=False)
