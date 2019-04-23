@@ -10,7 +10,7 @@ from ptdc.collector import Collector
 from ptdc.streamer import Streamer, OnlineStreamer, OnlineStatusStreamer
 from ptdc.support import authenticate, multiple_authentication
 
-__version__ = '0.1.9'
+__version__ = '0.1.10'
 __author__ = 'Andrea Lamparelli'
 __license__ = "MIT"
 

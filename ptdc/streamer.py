@@ -11,9 +11,10 @@ OnlineStatusesStreamer -> it collects data during streaming, but in this case on
 """
 
 import logging
+import socket
 import time
 
-from urllib3.exceptions import ProtocolError
+from urllib3 import exceptions
 
 import tweepy
 
@@ -174,7 +175,7 @@ class Streamer(tweepy.StreamListener):
                 logging.warning("Changing API..")
                 self._idx = (self._idx + 1) % len(self.apis)
                 continue
-            except (ProtocolError, tweepy.TweepError) as e:
+            except (socket.timeout, exceptions.ProtocolError, tweepy.TweepError) as e:
                 logging.warning(e)
                 logging.warning("Reconnecting...")
                 # sleep for 5 seconds
