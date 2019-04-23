@@ -29,7 +29,7 @@
     streamer = st.OnlineStreamer(apis=[api], collector=None, time_limit=45, data_limit=None, attempt=None)
 
 ### Start streaming on some topics, on the current thread
-    streamer.stream(track=['famous', 'web', 'vip'], is_async=False)
+    streamer.stream(track=['python', 'dev', 'coding'], is_async=False)
 
 ### After streaming ended, save DataFrame generated into csv files
     streamer.collector.user_dataset_to_csv(filename="../data/accounts.csv")
