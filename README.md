@@ -12,7 +12,7 @@
     from ptdc import authencticate
    
 ### Define tokens
-    # change these tokens with yours, see Twitter develeopers for more details to how obtain them
+    # replace these tokens with yours, see Twitter develeopers for more details to how obtain them
     consumer_key = "xxxxxxxxxxx"
     consumer_key_secret = "xxxxxxxxxxxxx"
     access_token = "xxxxxxxxxxxxxxxxxxxxxx"
