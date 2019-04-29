@@ -129,7 +129,7 @@ class Streamer(tweepy.StreamListener):
         if status_code == 401:
             # UNAUTHORIZED
             raise tweepy.TweepError(reason="Missing or incorrect authentication credentials", api_code=status_code)
-        elif status_code == 88:
+        elif status_code == 420:
             # RATE LIMIT
             raise tweepy.RateLimitError(reason="The request limit for this resource has been reached")
         else:

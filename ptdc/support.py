@@ -110,7 +110,7 @@ def multiple_authentication(tokens,
                             retry_delay=0, retry_errors=None,
                             timeout=60, parser=None,
                             compression=False,
-                            wait_on_rate_limit=True,
+                            wait_on_rate_limit=False,
                             wait_on_rate_limit_notify=True,
                             proxy=''):
     """
