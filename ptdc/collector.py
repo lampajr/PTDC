@@ -10,7 +10,7 @@ the data into Pandas DataFrame.
 
 import json
 import logging
-from abc import ABC
+from abc import ABC, abstractmethod
 
 import numpy as np
 import pandas as pd
@@ -33,6 +33,24 @@ class Collector(ABC):
 
     def dataset(self):
         return self._dataset
+
+    @abstractmethod
+    def process(self,
+                screen_name,
+                n_statuses,
+                filter_account=lambda x: True,
+                filter_status=lambda x: True):
+
+        """
+        Method called by the OnlineStreamer used for collecting data online,
+        Must be implemented by all sub-classes collector, each of one will define their own
+        collection procedure
+        :param screen_name: screen_name of the user streamed
+        :param n_statuses: number of statuses to be collected for that user
+        :param filter_account: filtering function for users
+        :param filter_status: filtering function for statuses
+        """
+        pass
 
     def init_dataset(self, features):
 
@@ -113,7 +131,7 @@ class AccountCollector(Collector):
     def save_dataset(self, path, sep='\t'):
 
         """
-        Override of parent class method, allowing user to saves also statuses collected,
+        Override of parent's class method, allowing user to saves also statuses collected,
         if statuses_collector is not None
         :param path: Accounts file's path
         :param sep: separator of csv
@@ -124,17 +142,30 @@ class AccountCollector(Collector):
             self._statuses_collector.save_dataset(path=statuses_path, sep=sep)
         super(AccountCollector, self).save_dataset(path=path, sep=sep)
 
+    def process(self,
+                screen_name,
+                n_statuses,
+                filter_account=lambda x: True,
+                filter_status=lambda x: True):
+
+        """ Overrided method, see super class doc"""
+
+        self.collect_account(screen_name=screen_name,
+                             n_statuses=n_statuses,
+                             filter_account=filter_account,
+                             filter_status=filter_status)
+
     def collect_account(self,
                         screen_name,
+                        n_statuses,
                         filter_account=lambda x: True,
-                        filter_status=lambda x: True,
-                        n_statuses=20):
+                        filter_status=lambda x: True):
         """
         Method that collects account's information
         :param screen_name: screen_name or id of the account to retrieve
-        :param filter_account: filtering function to apply to the Account obj
-        :param filter_status:
         :param n_statuses: number of account's statuses to collect
+        :param filter_account: filtering function to apply to the Account obj
+        :param filter_status: filtering function to apply to the Status obj
         """
 
         try:
@@ -186,6 +217,18 @@ class StatusCollector(Collector):
         self._all_features = np.array(list(self._features.keys()))
 
         self.init_dataset(features=self._all_features)
+
+    def process(self,
+                screen_name,
+                n_statuses,
+                filter_account=lambda x: True,
+                filter_status=lambda x: True):
+
+        """ Overrided method, see super class doc"""
+
+        self.collect_statuses(screen_name=screen_name,
+                              n_statuses=n_statuses,
+                              filter_status=filter_status)
 
     def collect_statuses(self, screen_name, n_statuses, filter_status=lambda x: True):
 
