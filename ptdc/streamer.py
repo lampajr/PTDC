@@ -84,7 +84,7 @@ class OnlineStreamer(tweepy.StreamListener):
         """
 
         if self._debug:
-            func(msg)
+            logging.warning(msg)
 
     def on_connect(self):
 
@@ -123,7 +123,8 @@ class OnlineStreamer(tweepy.StreamListener):
                 self.file = None
 
             self.log(logging.debug, "Streaming terminated at {}".format(support.get_date()))
-            self.log(logging.debug, "Streaming duration = {} seconds".format(self.time_limit))
+            duration = self.time_limit if self.time_limit is not None else support.get_time() - self.start_time
+            self.log(logging.debug, "Streaming duration = {} seconds".format(duration))
 
             # stop connection to w/ streaming server
             return False
@@ -144,7 +145,7 @@ class OnlineStreamer(tweepy.StreamListener):
             self.collector.save_dataset(path=self.backup_path)
 
         self.collector.process(screen_name=status.user.screen_name,
-                               filter_user=self.filter_user,
+                               filter_account=self.filter_user,
                                filter_status=self.filter_status,
                                n_statuses=self.n_statuses)
 
@@ -204,7 +205,7 @@ class OnlineStreamer(tweepy.StreamListener):
             except (socket.timeout, exceptions.ProtocolError, tweepy.TweepError) as e:
                 logging.warning(e)
                 logging.warning("Reconnecting...")
-                if self.attempts is not None :
+                if self.attempts is not None:
                     self.attempts -= 1
                 continue
 

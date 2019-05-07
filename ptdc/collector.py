@@ -63,16 +63,16 @@ class Collector(ABC):
 
         self._dataset = pd.DataFrame(columns=features)
 
-    def update_dataset(self, raw_data):
+    def update_dataset(self, data):
 
         """
         Update the current dataset with new raw_data
-        :param raw_data: pandas Series data to add in the df
+        :param data: pandas Series data to add in the df
         """
 
         self.log(logging.debug, "Updating DataFrame..")
 
-        self._dataset = self._dataset.append(raw_data, ignore_index=True)
+        self._dataset = self._dataset.append(data, ignore_index=True)
 
     def save_dataset(self, path, sep='\t'):
         """
@@ -94,7 +94,7 @@ class Collector(ABC):
         """
 
         if self._debug:
-            func(msg)
+            logging.warning(msg)
 
 
 class AccountCollector(Collector):
@@ -138,7 +138,7 @@ class AccountCollector(Collector):
         """
 
         if self._statuses_collector is not None:
-            statuses_path = path.strip(".csv")[0] + "_statuses.csv"
+            statuses_path = "statuses.csv"
             self._statuses_collector.save_dataset(path=statuses_path, sep=sep)
         super(AccountCollector, self).save_dataset(path=path, sep=sep)
 
@@ -172,9 +172,9 @@ class AccountCollector(Collector):
             logging.debug("Collecting account infos..")
             account = self.api.get_user(screen_name)
             if filter_account(account):
-                self.update_dataset(raw_data=self._process_account(account=account,
-                                                                   n_statuses=n_statuses,
-                                                                   filter_status=filter_status))
+                self.update_dataset(data=self._process_account(account=account,
+                                                               n_statuses=n_statuses,
+                                                               filter_status=filter_status))
             else:
                 self.log(logging.debug, "Account skipped..")
 
@@ -278,8 +278,8 @@ class StatusCollector(Collector):
         local_df = pd.DataFrame(columns=self._all_features)
         for st in all_statuses:
             raw_data = self._process_status(st)
-            self.update_dataset(raw_data=raw_data)
             local_df = local_df.append(raw_data, ignore_index=True)
+        self.update_dataset(data=local_df)
 
         return local_df
 
