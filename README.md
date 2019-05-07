@@ -8,8 +8,7 @@
 
 ## USAGE
 ### Import modules
-    from ptdc import OnlineStreamer
-    from ptdc import authencticate
+    from ptdc import authenticate, AccountCollector, OnlineStreamer, StatusCollector
    
 ### Define tokens
     # replace these tokens with yours, see Twitter develeopers for more details to how obtain them
@@ -23,14 +22,24 @@
                        consumer_key_secret=consumer_key_secret,
                        access_token=access_token,
                        access_token_secret=access_token_secret)
+                       
+### Create your own collectors for collect data
+    # Create your own StatusCollector
+    s_collector = StatusCollector(api=api)
 
-### Create Online Streamer w/ default collector
-    # NB: you can create your own collector and put it here as parameter
-    streamer = OnlineStreamer(apis=[api], collector=None, time_limit=45, data_limit=None, attempt=None)
+    # Create your own AccountCollector, collecting statuses 
+    collector = AccountCollector(api=api, statuses_collector=s_collector)
+
+### Create Online Streamer 
+    # Create Online Streamer that will collect data for 45 seconds
+    # Using collector=None the streamer will create a default collector
+    streamer = OnlineStreamer(api=api,
+                              collector=collector,
+                              data_limit=5,
+                              n_statuses=400)
 
 ### Start streaming on some topics, on the current thread
-    streamer.stream(track=['python', 'dev', 'coding'], is_async=False)
+    streamer.stream(track=['famous', 'web', 'vip', 'holiday', 'pic', 'photo'], is_async=False)
 
 ### After streaming ended, save DataFrame generated into csv files
-    streamer.collector.user_dataset_to_csv(filename="../data/accounts.csv")
-    streamer.collector.tweets_dataset_to_csv(filename="../data/statuses.csv")
+    streamer.collector.save_dataset(path="../data/accounts.csv")
