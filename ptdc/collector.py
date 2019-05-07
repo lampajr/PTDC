@@ -196,8 +196,9 @@ class AccountCollector(Collector):
         if self._timeline_features:
             # creates a local default collector for retrieving timeline features
             local_collector = self._statuses_collector if self._statuses_collector is not None else StatusCollector(api=self.api)
-            status_data = local_collector.collect_statuses(screen_name=account.screen_name, n_statuses=n_statuses, filter_status=filter_status)
-            account_data = account_data + [func(status_data, feature_name) for feature_name, func in self._timeline_features]
+            status_df = local_collector.collect_statuses(screen_name=account.screen_name, n_statuses=n_statuses, filter_status=filter_status)
+            status_data = [func(status_df, feature_name) for feature_name, func in self._timeline_features.items()]
+            account_data = account_data + status_data
 
         raw_data = pd.Series(account_data, index=self.dataset().columns)
         return raw_data
@@ -246,7 +247,7 @@ class StatusCollector(Collector):
         all_statuses = []
 
         count = 200 if n_statuses > 200 else n_statuses
-        new_statuses = self.api.user_timeline(screen_name=screen_name, count=count)
+        new_statuses = self.api.user_timeline(screen_name=screen_name, tweet_mode='extended', count=count)
 
         # save the most recent statuses
         all_statuses.extend(new_statuses)
@@ -262,11 +263,11 @@ class StatusCollector(Collector):
             count = 200 if remaining_statuses > 200 else remaining_statuses
 
             # collect oldest statuses wrt previous query
-            new_statuses = self.api.user_timeline(screen_name=screen_name, count=count, max_id=oldest)
+            new_statuses = self.api.user_timeline(screen_name=screen_name, tweet_mode='extended', count=count, max_id=oldest)
             all_statuses.extend(new_statuses)
 
             # update oldest status
-            oldest = all_statuses[-1]-id - 1
+            oldest = all_statuses[-1].id - 1
 
             self.log(logging.debug, "Collected {}/{} statuses..".format(len(all_statuses), n_statuses))
 
