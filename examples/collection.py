@@ -1,6 +1,5 @@
+from ptdc import authenticate, AccountCollector, StatusCollector
 import sys
-
-from ptdc import authenticate, AccountCollector
 
 if __name__ == '__main__':
 
@@ -22,13 +21,16 @@ if __name__ == '__main__':
                        access_token_secret=access_token_secret)
 
     # Create your own AccountCollector, without collecting statuses but only timeline's information
-    collector = AccountCollector(api=api)
+    s_collector = StatusCollector(api=api)
+
+    # Create your own AccountCollector, without collecting statuses but only timeline's information
+    collector = AccountCollector(api=api, statuses_collector=s_collector)
 
     # screen names of accounts to collect
     users_to_collect = ["", "", ""]
 
     # number of statuses to collect for retrieving infos
-    n_statuses = 100
+    n_statuses = 3200
 
     for name in users_to_collect:
         collector.collect_account(screen_name=name, n_statuses=n_statuses)
