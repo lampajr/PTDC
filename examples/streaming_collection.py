@@ -34,7 +34,7 @@ if __name__ == '__main__':
     streamer = OnlineStreamer(api=api,
                               collector=collector,
                               data_limit=n_accounts_to_collect,
-                              n_statuses=3200)
+                              n_statuses=400)
 
     # Start streaming on some topics, on the current thread
     streamer.stream(track=['famous', 'web', 'vip', 'holiday', 'pic', 'photo'], is_async=False)

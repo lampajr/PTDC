@@ -70,8 +70,6 @@ class Collector(ABC):
         :param data: pandas Series data to add in the df
         """
 
-        self.log(logging.debug, "Updating DataFrame..")
-
         self._dataset = self._dataset.append(data, ignore_index=True)
 
     def save_dataset(self, path, sep='\t'):
@@ -138,7 +136,7 @@ class AccountCollector(Collector):
         """
 
         if self._statuses_collector is not None:
-            statuses_path = "statuses.csv"
+            statuses_path = path[:path.rfind(".")] + "_statuses.csv"
             self._statuses_collector.save_dataset(path=statuses_path, sep=sep)
         super(AccountCollector, self).save_dataset(path=path, sep=sep)
 
@@ -279,6 +277,7 @@ class StatusCollector(Collector):
         for st in all_statuses:
             raw_data = self._process_status(st)
             local_df = local_df.append(raw_data, ignore_index=True)
+
         self.update_dataset(data=local_df)
 
         return local_df

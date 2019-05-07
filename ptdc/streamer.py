@@ -70,6 +70,8 @@ class OnlineStreamer(tweepy.StreamListener):
         self.start_time = 0
         self.last_backup = 0
         self.count = 0
+        self.start_time = support.get_time()
+        self.last_backup = self.start_time
         self.file = None
         self._closed = False
 
@@ -93,11 +95,7 @@ class OnlineStreamer(tweepy.StreamListener):
         the streaming server is established
         """
 
-        logging.debug("connection with streaming server established!")
-
-        self.start_time = support.get_time()
-        self.last_backup = self.start_time
-        self.count = 0
+        self.log(logging.debug, "connection with streaming server established!")
 
         self.log(logging.debug, "Streaming started at {}".format(support.get_date()))
 
