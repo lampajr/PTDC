@@ -21,10 +21,10 @@ if __name__ == '__main__':
                        access_token=access_token,
                        access_token_secret=access_token_secret)
 
-    # Create your own AccountCollector, without collecting statuses but only timeline's information
+    # Create your own StatusCollector
     s_collector = StatusCollector(api=api)
 
-    # Create your own AccountCollector, without collecting statuses but only timeline's information
+    # Create your own AccountCollector, collecting statuses
     collector = AccountCollector(api=api, statuses_collector=s_collector)
 
     n_accounts_to_collect = 3
