@@ -1,6 +1,6 @@
 import sys
 
-from ptdc import authenticate, AccountCollector, OnlineStreamer
+from ptdc import authenticate, AccountCollector, OnlineStreamer, StatusCollector
 
 if __name__ == '__main__':
 
@@ -22,17 +22,22 @@ if __name__ == '__main__':
                        access_token_secret=access_token_secret)
 
     # Create your own AccountCollector, without collecting statuses but only timeline's information
-    collector = AccountCollector(api=api)
+    s_collector = StatusCollector(api=api)
+
+    # Create your own AccountCollector, without collecting statuses but only timeline's information
+    collector = AccountCollector(api=api, statuses_collector=s_collector)
+
+    n_accounts_to_collect = 3
 
     # Create Online Streamer that will collect data for 45 seconds
     # Using collector=None the streamer will create a default collector
     streamer = OnlineStreamer(api=api,
                               collector=collector,
+                              data_limit=n_accounts_to_collect,
                               n_statuses=3200)
 
     # Start streaming on some topics, on the current thread
-    streamer.stream(track=['famous', 'web', 'vip'], is_async=False)
+    streamer.stream(track=['famous', 'web', 'vip', 'holiday', 'pic', 'photo'], is_async=False)
 
     # After streaming ended, save DataFrame generated into csv files
-    streamer.collector.user_dataset_to_csv(filename="../data/accounts.csv")
-    streamer.collector.statuses_dataset_to_csv(filename="../data/statuses.csv")
+    streamer.collector.save_dataset(path="../data/accounts.csv")
