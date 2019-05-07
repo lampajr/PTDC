@@ -196,7 +196,7 @@ class AccountCollector(Collector):
         if self._timeline_features:
             # creates a local default collector for retrieving timeline features
             local_collector = self._statuses_collector if self._statuses_collector is not None else StatusCollector(api=self.api)
-            status_data = local_collector.collect_statuses(screen_name=account.scree_name, n_statuses=n_statuses, filter_status=filter_status)
+            status_data = local_collector.collect_statuses(screen_name=account.screen_name, n_statuses=n_statuses, filter_status=filter_status)
             account_data = account_data + [func(status_data, feature_name) for feature_name, func in self._timeline_features]
 
         raw_data = pd.Series(account_data, index=self.dataset().columns)
