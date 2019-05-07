@@ -110,6 +110,20 @@ class AccountCollector(Collector):
 
         self.init_dataset(self._all_features)
 
+    def save_dataset(self, path, sep='\t'):
+
+        """
+        Override of parent class method, allowing user to saves also statuses collected,
+        if statuses_collector is not None
+        :param path: Accounts file's path
+        :param sep: separator of csv
+        """
+
+        if self._statuses_collector is not None:
+            statuses_path = path.split("\\.")[0] + "_statuses.csv"
+            self._statuses_collector.save_dataset(path=statuses_path, sep=sep)
+        super(AccountCollector, self).save_dataset(path=path, sep=sep)
+
     def collect_account(self,
                         screen_name,
                         filter_account=lambda x: True,
