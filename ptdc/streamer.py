@@ -143,10 +143,10 @@ class OnlineStreamer(tweepy.StreamListener):
             self.last_backup = support.get_time()
             self.collector.save_dataset(path=self.backup_path)
 
-        self.collector.collect_user(screen_name=status.user.screen_name,
-                                    filter_user=self.filter_user,
-                                    filter_status=self.filter_status,
-                                    n_statuses=self.n_statuses)
+        self.collector.process(screen_name=status.user.screen_name,
+                               filter_user=self.filter_user,
+                               filter_status=self.filter_status,
+                               n_statuses=self.n_statuses)
 
         self.count += 1
         if (self.data_limit is not None and self.count > self.data_limit) or \
