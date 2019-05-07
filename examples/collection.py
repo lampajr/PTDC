@@ -1,5 +1,6 @@
-from ptdc import authenticate, AccountCollector, StatusCollector
 import sys
+
+from ptdc import authenticate, AccountCollector, StatusCollector
 
 if __name__ == '__main__':
 

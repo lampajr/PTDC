@@ -1,19 +1,19 @@
-from ptdc.streamer import OnlineStreamer
-from ptdc.collector import AccountCollector
-from ptdc.support import authenticate
+import sys
+
+from ptdc import authenticate, AccountCollector, OnlineStreamer
 
 if __name__ == '__main__':
-    """
-    consumer_key = "xxxxxxxxxxxx"
-    consumer_key_secret = "xxxxxxxxxxxxxx"
-    access_token = "xxxxxxxxxxxxxxxxxxxxxxxx"
-    access_token_secret = "xxxxxxxxxxxxxx"
-    """
 
-    consumer_key = "ouij6TL9OLOTb3Ca3lcyQ8yUd"
-    consumer_key_secret = "VLHEEt5wbB5Kfu5eX1n546CbMSWLJmFuE5c2386u4ljT1uJA71"
-    access_token = "425255853 - 66oQZ4Nw1c6rrjBL2f1M7dkucrrfeYqmUJMAcGfT"
-    access_token_secret = "J4OaU6rBjGyr7NBS4CyfY9CPaaeflRT7MVDbk2hFuMFMo"
+    if len(sys.argv) == 5:
+        consumer_key = sys.argv[1]
+        consumer_key_secret = sys.argv[2]
+        access_token = sys.argv[3]
+        access_token_secret = sys.argv[4]
+    else:
+        consumer_key = "xxxxxxxxxxxx"
+        consumer_key_secret = "xxxxxxxxxxxxxx"
+        access_token = "xxxxxxxxxxxxxxxxxxxxxxxx"
+        access_token_secret = "xxxxxxxxxxxxxx"
 
     # Create the default API object of tweepy using provided authentication method
     api = authenticate(consumer_key=consumer_key,
