@@ -10,7 +10,7 @@ from ptdc.collector import Collector, AccountCollector, StatusCollector
 from ptdc.streamer import OnlineStreamer
 from ptdc.support import authenticate
 
-__version__ = '0.2.0'
+__version__ = '1.0.0'
 __author__ = 'Andrea Lamparelli'
 __license__ = "MIT"
 

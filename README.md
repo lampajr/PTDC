@@ -2,6 +2,7 @@
 
 ### Python Tweepy wrapper library that provides methods useful for collecting data from Twitter Social Network.
 
+### Current Version 1.0.0
 ## INSTALLATION
 ##### type the following command:
     ~$ pip install --index-url https://test.pypi.org/simple/ ptdc
