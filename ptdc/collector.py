@@ -138,7 +138,7 @@ class AccountCollector(Collector):
         """
 
         if self._statuses_collector is not None:
-            statuses_path = path.split("\\.")[0] + "_statuses.csv"
+            statuses_path = path.strip(".csv")[0] + "_statuses.csv"
             self._statuses_collector.save_dataset(path=statuses_path, sep=sep)
         super(AccountCollector, self).save_dataset(path=path, sep=sep)
 
