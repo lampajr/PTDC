@@ -10,6 +10,7 @@ the data into Pandas DataFrame.
 
 import json
 import logging
+from abc import ABC
 
 import numpy as np
 import pandas as pd
@@ -18,271 +19,218 @@ import tweepy
 from ptdc import data as dd
 from ptdc.support import get_time
 
+class Collector(ABC):
 
-class Collector(object):
+    """ Abstract Data Collector """
 
-    """ Data Collector that stores the DataFrames of the account and/or their tweets:
-    provides methods for handling the data, adding new users, removing users.."""
+    MAX_STATUSES = 3200  # maximum number of statuses that can be collected from a single account
+
+    def __init__(self, api, debug=True):
+        super(Collector, self).__init__()
+        self.api = api
+        self._debug = debug
+        self._dataset = None
+
+    def dataset(self):
+        return self._dataset
+
+    def init_dataset(self, features):
+
+        """
+        Create the empty dataframe
+        :param features: features  numpy array
+        """
+
+        self.log(logging.debug, "Initializing DataFrame..")
+
+        self._dataset = pd.DataFrame(columns=features)
+
+    def update_dataset(self, raw_data):
+
+        """
+        Update the current dataset with new raw_data
+        :param raw_data: pandas Series data to add in the df
+        """
+
+        self.log(logging.debug, "Updating DataFrame..")
+
+        self._dataset = self._dataset.append(raw_data, ignore_index=True)
+
+    def save_dataset(self, path, sep='\t'):
+        """
+        Save the dataset at given location
+        :param path: path where save the dataset
+        :param sep: separator used, default '\t'
+        """
+
+        self._dataset.to_csv(path_or_buf=path, sep=sep, index=False)
+
+        self.log(logging.debug, "Dataset saved at {}..".format(path))
+
+    def log(self, func, msg):
+
+        """
+        Logs message
+        :param func: logging function to use, debug, warning, error..
+        :param msg: message to log
+        """
+
+        if self._debug:
+            func(msg)
+
+
+class AccountCollector(Collector):
+
+    """ Twitter's Accounts Data Collector """
 
     def __init__(self,
-                 apis,
-                 collect_users=True,
-                 collect_statuses=True,
-                 user_attr_dict=None,
-                 user_tweets_attr_dict=None,
-                 tweet_attr_dict=None,
-                 retry=3,
-                 verbose=True):
-        """
-        Data Collector constructor
-        :param apis: list of tweepy apis used for querying Twitter
-        :param collect_users: bool, tells whether or not collect users
-        :param collect_statuses: bool, tells whether or not collect statuses
-        :param user_attr_dict: dict <attribute, func> for user. func takes user and attribute name
-        :param user_tweets_attr_dict: dict <attribute, func> for user. func takes tweets dataframe and attribute name
-        :param tweet_attr_dict: dict <attribute, func> for tweet. function takes tweet and attribute name
-        :param retry: number of times to retry a query in case of TweepError, default 0
-        :param verbose: bool, verbosity
-        """
-        self.verbose = verbose
-        self._collect_statuses = collect_statuses
-        self._collect_users = collect_users
-
-        self._user_attr_dict = dd.default_user_dict if user_attr_dict is None else user_attr_dict
-        self._user_statuses_attr_dict = dd.default_user_tweets_dict if user_tweets_attr_dict is None \
-            else user_tweets_attr_dict
-        self._tweet_attr_dict = dd.default_tweet_dict if tweet_attr_dict is None else tweet_attr_dict
-
-        # empty datasets
-        self._users_dataset = pd.DataFrame(columns=np.array(np.concatenate((
-            np.array(list(self._user_attr_dict.keys())), np.array(list(self._user_statuses_attr_dict.keys()))))))
-        self._statuses_dataset = pd.DataFrame(columns=np.array(list(self._tweet_attr_dict.keys())))
-
-        self.retry = retry
-
-        self.start_time = get_time(millis=True)
-        self.n_backups = 0
-
-        # Twitter apis for making query
-        self._apis = apis
-        self._idx = 0
-        # current API
-        self._api = self._apis[self._idx]
-
-    def get_users_dataset(self):
+                 api,
+                 statuses_collector=None,
+                 features=None,
+                 timeline_features=None,
+                 debug=True):
 
         """
-        :returns: pandas DataFrame containing collected accounts
+        Account Collector constructor
+        :param api: Tweepy API obj used for making query
+        :param statuses_collector: StatusCollector used for storing statuses
+        :param features: account features dict -> <feature_name, func>, func takes user and feature name
+        :param timeline_features: features related to the account timeline, dict <feature_name, func>,
+                                  func takes timeline dataframe and feature name
         """
 
-        return self._users_dataset
+        super(AccountCollector, self).__init__(api=api, debug=debug)
 
-    def get_tweets_dataset(self):
+        self._features = dd.default_account_features if features is None else features
+        self._timeline_features = dd.default_account_timeline_features if timeline_features is None else timeline_features
 
+        self._all_features = np.array(np.concatenate((np.array(list(self._features.keys())), np.array(list(self._timeline_features.keys())))))
+
+        self._statuses_collector = statuses_collector
+
+        self.init_dataset(self._all_features)
+
+    def collect_account(self,
+                        screen_name,
+                        filter_account=lambda x: True,
+                        filter_status=lambda x: True,
+                        n_statuses=20):
         """
-        :returns: pandas DataFrame containing collected tweets
-        """
-
-        return self._statuses_dataset
-
-    def _change_api(self):
-
-        """ Change the current API used for querying """
-
-        self._idx = (self._idx + 1) % len(self._apis)
-        logging.warning("Changing API.. {}".format(self._idx))
-        self._api = self._apis[self._idx]
-
-    ###########################################
-    ############ COLLECTOR METHODS ############
-    ###########################################
-
-    def collect_user(self,
-                     screen_name,
-                     filter_user=lambda x: True,
-                     filter_status=lambda x: True,
-                     n_statuses=20,
-                     attempt=0):
-
-        """
-        Collect all the information about a specific Account
-        :param screen_name: the screen_name/id of the account
-        :param filter_user: filtering function that takes as input the user obj and return True or False
-                        indicating whether collect the user or not
-        :param filter_status: filtering function that takes as input the status obj and return True or False
-                        indicating whether collect the tweet or not
-        :param n_statuses: number of statuses to collect for this user
-        :param attempt: current attempt, start from 0
+        Method that collects account's information
+        :param screen_name: screen_name or id of the account to retrieve
+        :param filter_account: filtering function to apply to the Account obj
+        :param filter_status:
+        :param n_statuses: number of account's statuses to collect
         """
 
         try:
-            if attempt <= self.retry:
-                user = self._api.get_user(screen_name)
-                if filter_user(user):
-                    logging.debug("Collecting user {}".format(screen_name))
-
-                    self._users_dataset = self._users_dataset.append(self._process_user(user=user,
-                                                                                        filter_status=filter_status,
-                                                                                        n_statuses=n_statuses),
-                                                                     ignore_index=True)
-
-                    logging.debug("User collected!")
-                else:
-                    logging.debug("User skipped..")
+            logging.debug("Collecting account infos..")
+            account = self.api.get_user(screen_name)
+            if filter_account(account):
+                self.update_dataset(raw_data=self._process_account(account=account,
+                                                                   n_statuses=n_statuses,
+                                                                   filter_status=filter_status))
             else:
-                logging.debug("Attempts limit of {} reached!".format(self.retry))
+                self.log(logging.debug, "Account skipped..")
+
         except tweepy.RateLimitError as e:
-            # change the API obj and retry until at least one is free to perform the query
             logging.warning(e)
-            self._change_api()
-            self.collect_user(screen_name=screen_name,
-                              filter_user=filter_user,
-                              filter_status=filter_status,
-                              n_statuses=n_statuses)
-        except tweepy.TweepError:
-            self.collect_user(screen_name,
-                              filter_user=lambda x: True,
-                              filter_status=lambda x: True,
-                              n_statuses=20,
-                              attempt=attempt+1)
+        except tweepy.TweepError as e:
+            logging.error(e)
 
-    def _process_user(self,
-                      user,
-                      filter_status,
-                      n_statuses):
+    def _process_account(self, account, n_statuses, filter_status):
 
         """
-        Process a single user, collecting all the information
-        :param user: Twitter user object
-        :param filter_status: status filter function, collect status or not
-        :param n_statuses: number of statuses to collect for this user
-        :return: raw_data containing all attributes' values for this user
+        Retrieve all pre-defined features for the given account
+        :param account: account for which get info
+        :param n_statuses: number of statuses to collect for this account
+        :return: pandas Series containing all information
         """
 
-        user_data = [func(user, attr_name) for attr_name, func in self._user_attr_dict.items()]  # user's attributes
+        account_data = [func(account, feature_name) for feature_name, func in self._features.items()]
+        if self._timeline_features:
+            # creates a local default collector for retrieving timeline features
+            local_collector = self._statuses_collector if self._statuses_collector is not None else StatusCollector(api=self.api)
+            status_data = local_collector.collect_statuses(screen_name=account.scree_name, n_statuses=n_statuses, filter_status=filter_status)
+            account_data = account_data + [func(status_data, feature_name) for feature_name, func in self._timeline_features]
 
-        if self._user_statuses_attr_dict or self._collect_statuses:
-            # collect user's statuses if the dict is not empty
-            tmp_tweets = self.collect_statuses(screen_name=user.screen_name,
-                                               filter_status=filter_status,
-                                               n_statuses=n_statuses)
-            if self._user_statuses_attr_dict:
-                user_statuses_data = [func(tmp_tweets, attr_name) for attr_name, func in
-                                      self._user_statuses_attr_dict.items()]
-                user_data = user_data + user_statuses_data
-
-        raw_data = pd.Series(user_data, index=self._users_dataset.columns)
+        raw_data = pd.Series(account_data, index=self.dataset().columns)
         return raw_data
 
-    def collect_statuses(self,
-                         screen_name,
-                         filter_status=lambda x: True,
-                         n_statuses=20):
+
+class StatusCollector(Collector):
+
+    """ Twitter's Statuses Data Collector """
+
+    def __init__(self,
+                 api,
+                 features=None,
+                 debug=True):
+        super(StatusCollector, self).__init__(api=api, debug=debug)
+
+        self._features = dd.default_statuses_features if features is None else features
+        self._all_features = np.array(list(self._features.keys()))
+
+        self.init_dataset(features=self._all_features)
+
+    def collect_statuses(self, screen_name, n_statuses, filter_status=lambda x: True):
 
         """
-        Collect some tweets for a specific account, retrieving their attributes
-        :param screen_name: screen_name of the account for which retrieve their tweets
-        :param filter_status: filtering function that takes as input the status obj and return True or False
-                        indicating whether collect the tweet or not
-        :param n_statuses: number of tweets to collect for that account
-        :return: DataFrame containing all tweets collected for this user"""
-
-        tmp_statuses_set = pd.DataFrame(columns=np.array(list(self._tweet_attr_dict.keys())))
-        for status in tweepy.Cursor(self._api.user_timeline, id=screen_name,  tweet_mode='extended').items(n_statuses):
-            if filter_status(status):
-                tmp_statuses_set = tmp_statuses_set.append(self._process_status(status=status), ignore_index=True)
-
-        return tmp_statuses_set
-
-    def _process_status(self,
-                        status):
-
-        """
-        Process a single status
-        :param status: Twitter status object that has to be processed, by extracting all its information
-        :return: pandas Series containing all the information for that tweet: raw_data """
-
-        # status' attributes
-        status_data = [func(status, attr_name) for attr_name, func in self._tweet_attr_dict.items()]
-
-        raw_data = pd.Series(status_data, index=self._statuses_dataset.columns)
-
-        if self._collect_statuses:
-            self._statuses_dataset = self._statuses_dataset.append(raw_data, ignore_index=True)
-
-        return raw_data
-
-    def collect_from_json(self,
-                          json_path,
-                          filter_user=lambda x: True,
-                          filter_status=lambda x: True,
-                          n_statuses=20):
-
-        """
-        Collects data (users and/or statuses) from a json file
-        :param json_path: path to the json file
-        :param filter_user: user filter function, tells whether collect user or not
-        :param filter_status: status filter function, tells whether collect status or not
-        :param n_statuses: number of statuses to collect for each user
+        Collect statuses from a specific account's timeline
+        :param screen_name: screen name or id of the account
+        :param n_statuses: number of statuses to collect for thus account
+        :param filter_status: filtering function to apply to Status obj
+        :return local DataFrame containing the statuses of this account
         """
 
-        try:
-            with open(json_path) as file:
-                for line in file:
-                    status = json.loads(line)
-                    self.collect_user(screen_name=status["user"]["screen_name"],
-                                      filter_user=filter_user,
-                                      filter_status=filter_status,
-                                      n_statuses=n_statuses)
-        except FileNotFoundError:
-            logging.warning("Json file not found.. make sure that the path is a valid one!")
+        n_statuses = Collector.MAX_STATUSES if n_statuses > Collector.MAX_STATUSES else n_statuses
 
-    def collect_statuses_from_json(self,
-                                   json_path,
-                                   filter_status=lambda x: True,
-                                   n_statuses=20):
+        # hold all account's statuses
+        all_statuses = []
+
+        count = 200 if n_statuses > 200 else n_statuses
+        new_statuses = self.api.user_timeline(screen_name=screen_name, count=count)
+
+        # save the most recent statuses
+        all_statuses.extend(new_statuses)
+
+        # save the id of the oldest status
+        oldest = all_statuses[-1].id
+
+        # keep grabbing statuses until no statuses left to grab or the total amount of statuses to collect was reached
+        while len(new_statuses) > 0 and len(all_statuses) < n_statuses:
+
+            # remaining statuses to collect
+            remaining_statuses = n_statuses - len(all_statuses)
+            count = 200 if remaining_statuses > 200 else remaining_statuses
+
+            # collect oldest statuses wrt previous query
+            new_statuses = self.api.user_timeline(screen_name=screen_name, count=count, max_id=oldest)
+            all_statuses.extend(new_statuses)
+
+            # update oldest status
+            oldest = all_statuses[-1]-id - 1
+
+            self.log(logging.debug, "Collected {}/{} statuses..".format(len(all_statuses), n_statuses))
+
+        all_statuses = np.array(all_statuses)
+        # keep all statuses that satisfy the filtering function
+        all_statuses = all_statuses[list(map(filter_status, all_statuses))]
+
+        local_df = pd.DataFrame(columns=self._all_features)
+        for st in all_statuses:
+            raw_data = self._process_status(st)
+            self.update_dataset(raw_data=raw_data)
+            local_df = local_df.append(raw_data, ignore_index=True)
+
+        return local_df
+
+    def _process_status(self, status):
+
         """
-        Collects statuses from a json file
-        :param json_path: path to the json file
-        :param filter_status: status filter function, tells whether collect status or not
-        :param n_statuses: number of statuses to collect for each user
+        Process a single status retrieving all the pre-defined information
+        :param status: status obj
+        :return: pandas Series containing all the infos
         """
 
-        try:
-            with open(json_path) as file:
-                for line in file:
-                    status = json.loads(line)
-                    self.collect_statuses(screen_name=status["user"]["screen_name"],
-                                          filter_status=filter_status,
-                                          n_statuses=n_statuses)
-        except FileNotFoundError:
-            logging.warning("Json file not found.. make sure that the path is a valid one!")
-
-    #################################################
-    ################# CSV CONVERTER #################
-    #################################################
-
-    def backup(self):
-
-        """ Backup method, stores used dataset into dotted csv files in the current directory """
-
-        self.n_backups += 1
-        logging.warning("Backup.. n.{}".format(self.n_backups))
-
-        if self._collect_users:
-            self.user_dataset_to_csv(filename=".users-backup{}.csv".format(self.start_time))
-
-        if self._collect_statuses:
-            self.statuses_dataset_to_csv(filename=".statuses-backup{}.csv".format(self.start_time))
-
-    def user_dataset_to_csv(self,
-                            filename,
-                            sep="\t"):
-        logging.debug("Saving users dataset at {}".format(filename))
-        self._users_dataset.to_csv(path_or_buf=filename, sep=sep, index=False)
-
-    def statuses_dataset_to_csv(self,
-                                filename,
-                                sep="\t"):
-        logging.debug("Saving tweets dataset at {}".format(filename))
-        self._statuses_dataset.to_csv(path_or_buf=filename, sep=sep, index=False)
+        return pd.Series([func(status, attr_name) for attr_name, func in self._features.items()], index=self.dataset().columns)
