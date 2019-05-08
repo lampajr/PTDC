@@ -42,7 +42,8 @@ default_account_features = {"id": get_attribute,
                             "default_profile_image": get_attribute,
                             "profile_crawled": lambda x, y: get_date(),
                             "is_suspended": lambda x, y: 0,
-                            "f_ratio": lambda user, _: user.friends_count / user.followers_count if user.followers_count != 0 else None}
+                            "following_followers_ratio": lambda user, _: user.friends_count / user.followers_count if user.followers_count != 0 else None,
+                            "followers_following_ratio": lambda user, _: user.followers_count / user.friends_count if user.friends_count != 0 else None}
 
 
 default_account_timeline_features = {"n_statuses_collected": lambda statuses_data, _: statuses_data.shape[0],
