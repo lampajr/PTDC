@@ -6,12 +6,12 @@ Python Twitter Data Collector library initialization
 """
 import logging
 
-from ptdc.collector import Collector, AccountCollector, StatusCollector
+from ptdc.collector import Collector, AccountCollector, StatusCollector, default_statuses_features, \
+    default_account_timeline_features, default_account_features
 from ptdc.streamer import OnlineStreamer
 from ptdc.support import authenticate
-from ptdc import data
 
-__version__ = '1.2.1'
+__version__ = '1.2.2'
 __author__ = 'Andrea Lamparelli'
 __license__ = "MIT"
 
@@ -19,7 +19,9 @@ __all__ = [
     'AccountCollector',
     'StatusCollector',
     'Collector',
-    'data',
+    'default_account_timeline_features',
+    'default_statuses_features',
+    'default_account_features',
     'OnlineStreamer',
     'authenticate',
     '__version__'
