@@ -75,3 +75,9 @@ After streaming ended (in according to your defined limits), save DataFrame/s ge
 You just need to access the collector object and call the save_dataset method providing the path.
 
     streamer.collector.save_dataset(path="../data/accounts.csv")
+    
+## Questions and Contributing
+
+Feel free to post questions and problems on the issue tracker. Pull requests are welcome!
+
+Feel free to fork and modify or add new features and functionality to the library
