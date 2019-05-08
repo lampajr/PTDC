@@ -12,7 +12,7 @@ that you can as CSV.
 This library provides a framework that you can use to build your own data collector, specifying which are your features
 that have to be extracted from Twitter accounts/statuses.
 
-Latest Version: 1.0.0
+Latest Version: 1.2.0
 
 Creating your Twitter dataset:
 1. Instantiate an `AccountCollector` and/or `StatusCollector` class in according to what you want collect, accounts, 
