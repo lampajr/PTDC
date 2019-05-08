@@ -8,7 +8,6 @@ the data into Pandas DataFrame.
 :license: MIT, see LICENSE for more details.
 """
 
-import json
 import logging
 from abc import ABC, abstractmethod
 
@@ -17,7 +16,7 @@ import pandas as pd
 import tweepy
 
 from ptdc import data as dd
-from ptdc.support import get_time
+
 
 class Collector(ABC):
 
@@ -92,7 +91,7 @@ class Collector(ABC):
         """
 
         if self._debug:
-            logging.warning(msg)
+            func(msg)
 
 
 class AccountCollector(Collector):

@@ -11,9 +11,8 @@ OnlineStreamer -> makes an online collection, printing the streamed ata into a j
 import logging
 import socket
 
-from urllib3 import exceptions
-
 import tweepy
+from urllib3 import exceptions
 
 from ptdc import support
 
@@ -86,7 +85,7 @@ class OnlineStreamer(tweepy.StreamListener):
         """
 
         if self._debug:
-            logging.warning(msg)
+            func(msg)
 
     def on_connect(self):
 
