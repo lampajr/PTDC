@@ -1,5 +1,10 @@
 # PTDC: PYTHON TWITTER DATA COLLECTOR
 
+
+[![Author](http://img.shields.io/badge/author-lampajr-blue.svg?style=flat-square)]()
+[![Python 3.7](https://img.shields.io/badge/python-3.7-blue.svg)](https://www.python.org/downloads/release/python-370/)
+[![license](https://img.shields.io/github/license/mashape/apistatus.svg?style=flat-square)]()
+
 Python Twitter data collector built on [Tweepy](https://github.com/tweepy/tweepy) that allow users to dynamically 
 collect accounts and statuses from Twitter during streaming, and automatically generate Datasets from collected data
 that you can as CSV.
