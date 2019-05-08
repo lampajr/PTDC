@@ -3,7 +3,7 @@
 
 [![Author](http://img.shields.io/badge/author-lampajr-blue.svg?style=flat-square)]
 [![PyPi](https://img.shields.io/pypi/v/ptdc.svg?style=flat-square)](https://pypi.org/project/ptdc/)
-[![Python 3](https://img.shields.io/pypi/pyversions/ptdc.svg)]
+[![Python 3.7](https://img.shields.io/pypi/pyversions/ptdc.svg)]
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg?style=flat-square)](https://github.com/lampajr/PTDC/blob/master/LICENSE)
 
 Python Twitter data collector built on [Tweepy](https://github.com/tweepy/tweepy) that allow users to dynamically 
