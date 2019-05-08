@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 import tweepy
 
-from ptdc import default_account_features, default_account_timeline_features, default_statuses_features
+from ptdc import data
 
 
 class Collector(ABC):
@@ -116,8 +116,8 @@ class AccountCollector(Collector):
 
         super(AccountCollector, self).__init__(api=api, debug=debug)
 
-        self._features = default_account_features if features is None else features
-        self._timeline_features = default_account_timeline_features if timeline_features is None else timeline_features
+        self._features = data.default_account_features if features is None else features
+        self._timeline_features = data.default_account_timeline_features if timeline_features is None else timeline_features
 
         self._all_features = np.array(np.concatenate((np.array(list(self._features.keys())), np.array(list(self._timeline_features.keys())))))
 
@@ -211,7 +211,7 @@ class StatusCollector(Collector):
                  debug=True):
         super(StatusCollector, self).__init__(api=api, debug=debug)
 
-        self._features = default_statuses_features if features is None else features
+        self._features = data.default_statuses_features if features is None else features
         self._all_features = np.array(list(self._features.keys()))
 
         self.init_dataset(features=self._all_features)

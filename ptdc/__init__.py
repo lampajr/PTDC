@@ -11,7 +11,7 @@ from ptdc.streamer import OnlineStreamer
 from ptdc.support import authenticate
 from ptdc.data import default_statuses_features, default_account_features, default_account_timeline_features
 
-__version__ = '1.2.0'
+__version__ = '1.2.1'
 __author__ = 'Andrea Lamparelli'
 __license__ = "MIT"
 

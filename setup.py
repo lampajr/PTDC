@@ -28,7 +28,7 @@ setup(
     license="MIT License",
     zip_safe=False,
 
-    packages=find_packages(exclude=['tests', 'samples', 'data']),
+    packages=find_packages(exclude=['tests', 'samples', 'dataset']),
     install_requires=get_requirements(),
 
     classifiers=[
