@@ -9,6 +9,7 @@ import logging
 from ptdc.collector import Collector, AccountCollector, StatusCollector
 from ptdc.streamer import OnlineStreamer
 from ptdc.support import authenticate
+from ptdc.data import default_statuses_features, default_account_features, default_account_timeline_features
 
 __version__ = '1.0.0'
 __author__ = 'Andrea Lamparelli'
@@ -18,7 +19,9 @@ __all__ = [
     'AccountCollector',
     'StatusCollector',
     'Collector',
-    'data',
+    'default_account_features',
+    'default_account_timeline_features',
+    'default_statuses_features',
     'OnlineStreamer',
     'authenticate',
     '__version__'
