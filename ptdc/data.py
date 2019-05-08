@@ -6,7 +6,7 @@ representing which features/attributes are collected from users and statuses
 :license: MIT, see LICENSE for more details.
 """
 
-from ptdc.support import *
+from ptdc.support import get_attribute, get_date, get_media, get_quoted_user_id, get_retweeted_status, get_retweeted_user_id
 from functools import reduce
 
 
