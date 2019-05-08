@@ -1,5 +1,5 @@
 """
-Streamer module, it contains all Streamer object used for listening on Twitter channel
+Streamer module, it contains Streamer class used for listening on Twitter channel
 OnlineStreamer -> makes an online collection, printing the streamed ata into a json file and directly collecting
                   all data through the usage of a specific collector.
                   @see Collector
@@ -26,7 +26,7 @@ class OnlineStreamer(tweepy.StreamListener):
                  n_statuses,
                  time_limit=None,
                  data_limit=None,
-                 json_path="./default_stream_file.json",
+                 json_path="./streaming.json",
                  backup_path=None,
                  filter_user=lambda x: True,
                  filter_status=lambda x: True,
