@@ -98,11 +98,13 @@ class Collector(ABC):
 
     MAX_STATUSES = 3200  # maximum number of statuses that can be collected from a single account
 
-    def __init__(self, api, debug=True):
+    def __init__(self, api, verbose=True):
         super(Collector, self).__init__()
         self.api = api
-        self._debug = debug
+        self._verbose = verbose
         self._dataset = None
+        self.count = 0
+        self.verboseprint = print if self._verbose else lambda *args: None
 
     def dataset(self):
         return self._dataset
@@ -132,7 +134,7 @@ class Collector(ABC):
         :param features: features  numpy array
         """
 
-        self.log(logging.debug, "Initializing DataFrame..")
+        logging.debug("Initializing DataFrame..")
 
         self._dataset = pd.DataFrame(columns=features)
 
@@ -154,18 +156,8 @@ class Collector(ABC):
 
         self._dataset.to_csv(path_or_buf=path, sep=sep, index=False)
 
-        self.log(logging.debug, "Dataset saved at {}..".format(path))
-
-    def log(self, func, msg):
-
-        """
-        Logs message
-        :param func: logging function to use, debug, warning, error..
-        :param msg: message to log
-        """
-
-        if self._debug:
-            func(msg)
+        self.verboseprint("Dataset successfully saved at {}.".format(path))
+        logging.debug("Dataset saved at {}..".format(path))
 
 
 class AccountCollector(Collector):
@@ -177,7 +169,7 @@ class AccountCollector(Collector):
                  statuses_collector=None,
                  features=None,
                  timeline_features=None,
-                 debug=True):
+                 verbose=True):
 
         """
         Account Collector constructor
@@ -188,7 +180,7 @@ class AccountCollector(Collector):
                                   func takes timeline dataframe and feature name
         """
 
-        super(AccountCollector, self).__init__(api=api, debug=debug)
+        super(AccountCollector, self).__init__(api=api, verbose=verbose)
 
         self._features = default_account_features if features is None else features
         self._timeline_features = default_account_timeline_features if timeline_features is None else timeline_features
@@ -238,15 +230,20 @@ class AccountCollector(Collector):
         :param filter_account: filtering function to apply to the Account obj
         :param filter_status: filtering function to apply to the Status obj
         """
-
-        self.log(logging.debug, "Collecting account infos..")
+        self.verboseprint("Collecting account..")
+        logging.debug("Collecting account infos..")
         account = self.api.get_user(screen_name)
         if filter_account(account):
             self.update_dataset(data=self._process_account(account=account,
                                                            n_statuses=n_statuses,
                                                            filter_status=filter_status))
         else:
-            self.log(logging.debug, "Account skipped..")
+            self.verboseprint("Account skipped..")
+            logging.debug("Account skipped..")
+        self.count += 1
+
+        if (self.count % 20) == 0:
+            self.verboseprint("Collected {} accounts!".format(self.count))
 
     def _process_account(self, account, n_statuses, filter_status):
 
@@ -276,8 +273,8 @@ class StatusCollector(Collector):
     def __init__(self,
                  api,
                  features=None,
-                 debug=True):
-        super(StatusCollector, self).__init__(api=api, debug=debug)
+                 verbose=True):
+        super(StatusCollector, self).__init__(api=api, verbose=verbose)
 
         self._features = default_statuses_features if features is None else features
         self._all_features = np.array(list(self._features.keys()))
@@ -334,8 +331,10 @@ class StatusCollector(Collector):
                 # update oldest status
                 oldest = all_statuses[-1].id - 1
 
-                self.log(logging.debug, "Collected {}/{} statuses..".format(len(all_statuses), n_statuses))
-            except tweepy.TweepError:
+                self.verboseprint("Collected {}/{} statuses..".format(len(all_statuses), n_statuses))
+                logging.debug("Collected {}/{} statuses..".format(len(all_statuses), n_statuses))
+            except tweepy.TweepError as e:
+                logging.warning(e)
                 continue
 
         all_statuses = np.array(all_statuses)
