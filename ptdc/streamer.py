@@ -31,7 +31,7 @@ class OnlineStreamer(tweepy.StreamListener):
                  filter_status=lambda x: True,
                  attempts=None,
                  backup=None,
-                 debug=True):
+                 verbose=True):
 
         """
         Streamer constructor, it represents an offline streamer, store streaming data into a file
@@ -47,7 +47,7 @@ class OnlineStreamer(tweepy.StreamListener):
         :param attempts: number of reconnection attempts to perform in case of streaming failure, first connection
                          excluded, if None always retry to reconnect
         :param backup: every how many seconds to backup, if None no backup is scheduled
-        :param debug: verbosity
+        :param verbose: verbosity
         """
 
         super(OnlineStreamer, self).__init__()
@@ -61,7 +61,9 @@ class OnlineStreamer(tweepy.StreamListener):
         self.n_statuses = n_statuses
         self.attempts = attempts
         self.backup = backup
-        self._debug = debug
+        self._verbose = verbose
+        # verbosity function
+        self.verboseprint = print if self._verbose else lambda *args: None
 
         # collector needed for online data collection
         self.collector = collector
@@ -74,19 +76,6 @@ class OnlineStreamer(tweepy.StreamListener):
         self.file = None
         self._closed = False
 
-    def log(self,
-            func,
-            msg):
-
-        """
-        Logs message
-        :param func: logging function to use, debug, warning, error..
-        :param msg: message to log
-        """
-
-        if self._debug:
-            func(msg)
-
     def on_connect(self):
 
         """
@@ -94,9 +83,10 @@ class OnlineStreamer(tweepy.StreamListener):
         the streaming server is established
         """
 
-        self.log(logging.debug, "connection with streaming server established!")
+        self.verboseprint("Connection with streaming server established!")
+        logging.debug("Connection with streaming server established!")
 
-        self.log(logging.debug, "Streaming started at {}".format(support.get_date()))
+        logging.debug("Streaming started at {}".format(support.get_date()))
 
         if self.json_path is not None:
             # open or create a new file
@@ -110,7 +100,7 @@ class OnlineStreamer(tweepy.StreamListener):
 
         """ Called when new data is available """
 
-        self.log(logging.debug, "New data received..")
+        logging.debug("New data received..")
 
         # if enough time was passed stop streaming or enough data was collected
         if self._closed:
@@ -119,9 +109,11 @@ class OnlineStreamer(tweepy.StreamListener):
                 self.file.close()
                 self.file = None
 
-            self.log(logging.debug, "Streaming terminated at {}".format(support.get_date()))
             duration = self.time_limit if self.time_limit is not None else support.get_time() - self.start_time
-            self.log(logging.debug, "Streaming duration = {} seconds".format(duration))
+
+            self.verboseprint("Streaming duration = {} seconds".format(duration))
+            logging.debug("Streaming terminated at {}".format(support.get_date()))
+            logging.debug("Streaming duration = {} seconds".format(duration))
 
             # stop connection to w/ streaming server
             return False
@@ -201,7 +193,7 @@ class OnlineStreamer(tweepy.StreamListener):
                                filter_level=filter_level)
             except (socket.timeout, exceptions.ReadTimeoutError, exceptions.ProtocolError, tweepy.TweepError) as e:
                 logging.warning(e)
-                logging.warning("Reconnecting...")
+                self.verboseprint("Reconnecting...")
                 if self.attempts is not None:
                     self.attempts -= 1
                 continue
