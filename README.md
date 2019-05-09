@@ -14,17 +14,14 @@ This library provides a framework that you can use to build your own data collec
 that have to be extracted from Twitter accounts/statuses.
 
 Creating your Twitter dataset:
-1. Instantiate an `AccountCollector` and/or `StatusCollector` class in according to what you want collect, accounts, 
-statuses or both.
-At this step you can re-defined your own features that have to be extracted from twitter data, you have to pass dict-like parameters
-in the following form: <feature_name, function> where the function has to be applied to the user or status object.
+1. Instantiate an `AccountCollector` and/or `StatusCollector` class in according to what you want collect, accounts, statuses or both.
+At this step you can re-defined your own features that have to be extracted from twitter data, you have to pass dict-like parameters in the following form: <feature_name, function> where the function has to be applied to the user or status object.
 Please refer to [documentation](https://developer.twitter.com/en/docs/tweets/data-dictionary/overview/user-object.html) for more details about Twitter objects
 2. Instantiate the `OnlineStreamer` passing the collector as parameter 
 3. Start streaming on some topics
 4. Save the created dataset at specified location
 
-NB: It is not mandatory to use both collectors and streamer but you can also use Collectors alone, for instance if you 
-already have the users and/or statuses to collect and you don't need to stream anything.
+NB: It is not mandatory to use both collectors and streamer but you can also use Collectors alone, for instance if you already have the users and/or statuses to collect and you don't need to stream anything.
 
 ## INSTALLATION
 
