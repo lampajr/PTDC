@@ -11,7 +11,7 @@ from ptdc.collector import Collector, AccountCollector, StatusCollector, default
 from ptdc.streamer import OnlineStreamer
 from ptdc.support import authenticate
 
-__version__ = '1.2.2'
+__version__ = '1.2.5'
 __author__ = 'Andrea Lamparelli'
 __license__ = "MIT"
 
