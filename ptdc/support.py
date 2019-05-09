@@ -47,6 +47,57 @@ def get_attribute(obj, attr_name):
 
     return getattr(obj, attr_name)
 
+
+def get_country(status):
+
+    """
+    Retrieve the country from a Place object
+    :param status: status obj
+    :return: country's place
+    """
+    try:
+        place = status.place
+        if place is None:
+            return None
+        return place["country"]
+    except KeyError:
+        return None
+
+
+def get_place_type(status):
+
+    """
+    Retrieve the place type from a Place object
+    :param status: status obj
+    :return: place type, like city
+    """
+
+    try:
+        place = status.place
+        if place is None:
+            return None
+        return place.place_type
+    except KeyError:
+        return None
+
+
+def get_place_coordinates(status):
+
+    """
+    Retrieve the coordinates of a place
+    :param status: Status obj
+    :return: list of coordinates
+    """
+
+    try:
+        place = status.place
+        if place is None:
+            return None
+        return place["bounding_box"]["coordinates"]
+    except KeyError:
+        return None
+
+
 def get_media(status):
 
     """
