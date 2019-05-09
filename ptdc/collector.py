@@ -17,7 +17,7 @@ import pandas as pd
 import tweepy
 
 from ptdc.support import get_attribute, get_retweeted_user_id, get_retweeted_status, get_quoted_user_id, get_media, \
-    get_date, get_country, get_place_coordinates, get_place_type
+    get_date, get_country, get_place_type
 
 default_account_features = {"id": get_attribute,
                             "name": get_attribute,
@@ -81,15 +81,15 @@ default_statuses_features = {"id": get_attribute,
                              "in_reply_to_screen_name": get_attribute,
                              "user_id": lambda status, _: status.user.id,
                              "text_length": lambda status, _: len(status.full_text),
-                             "hashtags": lambda status, name: [ht["text"] for ht in status.entities[name]],
+                             "hashtags": lambda status, feature: [ht["text"] for ht in status.entities[feature]],
                              "user_mentions": lambda status, feature: [user["screen_name"] for user in status.entities[feature]],
+                             "symbols": lambda status, feature: status.entities[feature],
                              "media_urls": lambda status, _: get_media(status),
                              "quoted_user_id": lambda status, _: get_quoted_user_id(status),
                              "retweeted_status": lambda status, _: get_retweeted_status(status),
                              "retweeted_user_id": lambda status, _: get_retweeted_user_id(status),
                              "country": lambda status, _: get_country(status),
-                             "place_type": lambda status, _: get_place_type(status),
-                             "place_coordinates": lambda status, _: get_place_coordinates(status)}
+                             "place_type": lambda status, _: get_place_type(status)}
 
 
 class Collector(ABC):
@@ -239,20 +239,14 @@ class AccountCollector(Collector):
         :param filter_status: filtering function to apply to the Status obj
         """
 
-        try:
-            logging.debug("Collecting account infos..")
-            account = self.api.get_user(screen_name)
-            if filter_account(account):
-                self.update_dataset(data=self._process_account(account=account,
-                                                               n_statuses=n_statuses,
-                                                               filter_status=filter_status))
-            else:
-                self.log(logging.debug, "Account skipped..")
-
-        except tweepy.RateLimitError as e:
-            logging.warning(e)
-        except tweepy.TweepError as e:
-            logging.error(e)
+        self.log(logging.debug, "Collecting account infos..")
+        account = self.api.get_user(screen_name)
+        if filter_account(account):
+            self.update_dataset(data=self._process_account(account=account,
+                                                           n_statuses=n_statuses,
+                                                           filter_status=filter_status))
+        else:
+            self.log(logging.debug, "Account skipped..")
 
     def _process_account(self, account, n_statuses, filter_status):
 
@@ -328,19 +322,21 @@ class StatusCollector(Collector):
 
         # keep grabbing statuses until no statuses left to grab or the total amount of statuses to collect was reached
         while len(new_statuses) > 0 and len(all_statuses) < n_statuses:
+            try:
+                # remaining statuses to collect
+                remaining_statuses = n_statuses - len(all_statuses)
+                count = 200 if remaining_statuses > 200 else remaining_statuses
 
-            # remaining statuses to collect
-            remaining_statuses = n_statuses - len(all_statuses)
-            count = 200 if remaining_statuses > 200 else remaining_statuses
+                # collect oldest statuses wrt previous query
+                new_statuses = self.api.user_timeline(screen_name=screen_name, tweet_mode='extended', count=count, max_id=oldest)
+                all_statuses.extend(new_statuses)
 
-            # collect oldest statuses wrt previous query
-            new_statuses = self.api.user_timeline(screen_name=screen_name, tweet_mode='extended', count=count, max_id=oldest)
-            all_statuses.extend(new_statuses)
+                # update oldest status
+                oldest = all_statuses[-1].id - 1
 
-            # update oldest status
-            oldest = all_statuses[-1].id - 1
-
-            self.log(logging.debug, "Collected {}/{} statuses..".format(len(all_statuses), n_statuses))
+                self.log(logging.debug, "Collected {}/{} statuses..".format(len(all_statuses), n_statuses))
+            except tweepy.TweepError:
+                continue
 
         all_statuses = np.array(all_statuses)
         # keep all statuses that satisfy the filtering function

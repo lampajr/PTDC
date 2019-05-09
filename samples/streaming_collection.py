@@ -27,7 +27,7 @@ if __name__ == '__main__':
     # Create your own AccountCollector, collecting statuses
     collector = AccountCollector(api=api, statuses_collector=s_collector)
 
-    n_accounts_to_collect = 20
+    n_accounts_to_collect = 5
 
     # Create Online Streamer that will collect data for 45 seconds
     # Using collector=None the streamer will create a default collector

@@ -59,7 +59,7 @@ def get_country(status):
         place = status.place
         if place is None:
             return None
-        return place["country"]
+        return place.country
     except KeyError:
         return None
 
@@ -77,23 +77,6 @@ def get_place_type(status):
         if place is None:
             return None
         return place.place_type
-    except KeyError:
-        return None
-
-
-def get_place_coordinates(status):
-
-    """
-    Retrieve the coordinates of a place
-    :param status: Status obj
-    :return: list of coordinates
-    """
-
-    try:
-        place = status.place
-        if place is None:
-            return None
-        return place["bounding_box"]["coordinates"]
     except KeyError:
         return None
 
