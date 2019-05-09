@@ -27,17 +27,19 @@ if __name__ == '__main__':
     # Create your own AccountCollector, collecting statuses
     collector = AccountCollector(api=api, statuses_collector=s_collector)
 
-    n_accounts_to_collect = 3
+    n_accounts_to_collect = 20
 
     # Create Online Streamer that will collect data for 45 seconds
     # Using collector=None the streamer will create a default collector
     streamer = OnlineStreamer(api=api,
                               collector=collector,
                               data_limit=n_accounts_to_collect,
+                              backup=60,
+                              backup_path="../dataset/backup.csv",
                               n_statuses=400)
 
     # Start streaming on some topics, on the current thread
-    streamer.stream(track=['famous', 'web', 'vip', 'holiday', 'pic', 'photo'], is_async=False)
+    streamer.stream(track=['ico', 'crypto', 'crowdfunding', 'womensday', 'vip', 'holiday', 'pic', 'photo'], is_async=False)
 
     # After streaming ended, save DataFrame generated into csv files
-    streamer.collector.save_dataset(path="../data/accounts.csv")
+    streamer.collector.save_dataset(path="../dataset/accounts.csv")
