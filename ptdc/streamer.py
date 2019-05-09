@@ -202,7 +202,6 @@ class OnlineStreamer(tweepy.StreamListener):
             except (socket.timeout, exceptions.ReadTimeoutError, exceptions.ProtocolError, tweepy.TweepError) as e:
                 logging.warning(e)
                 logging.warning("Reconnecting...")
-                self.count -= 1
                 if self.attempts is not None:
                     self.attempts -= 1
                 continue
