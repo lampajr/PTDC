@@ -85,7 +85,7 @@ class OnlineStreamer(tweepy.StreamListener):
         """
 
         if self._debug:
-            func(msg)
+            logging.warning(msg)
 
     def on_connect(self):
 
@@ -199,7 +199,7 @@ class OnlineStreamer(tweepy.StreamListener):
                 stream_.filter(follow=follow, track=track, is_async=is_async, locations=locations,
                                stall_warnings=stall_warnings, languages=languages, encoding=encoding,
                                filter_level=filter_level)
-            except (socket.timeout, exceptions.ProtocolError, tweepy.TweepError) as e:
+            except (socket.timeout, exceptions.ReadTimeoutError, exceptions.ProtocolError, tweepy.TweepError) as e:
                 logging.warning(e)
                 logging.warning("Reconnecting...")
                 if self.attempts is not None:
