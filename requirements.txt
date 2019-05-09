@@ -2,3 +2,4 @@ urllib3
 numpy
 pandas
 tweepy
+simplejson
