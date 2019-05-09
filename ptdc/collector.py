@@ -17,7 +17,7 @@ import pandas as pd
 import tweepy
 
 from ptdc.support import get_attribute, get_retweeted_user_id, get_retweeted_status, get_quoted_user_id, get_media, \
-    get_date
+    get_date, get_country, get_place_coordinates, get_place_type
 
 default_account_features = {"id": get_attribute,
                             "name": get_attribute,
@@ -74,7 +74,6 @@ default_statuses_features = {"id": get_attribute,
                              "retweet_count": get_attribute,
                              "favorite_count": get_attribute,
                              "source": get_attribute,
-                             "place": get_attribute,
                              "truncated": get_attribute,
                              "is_quote_status": get_attribute,
                              "in_reply_to_status_id": get_attribute,
@@ -82,11 +81,15 @@ default_statuses_features = {"id": get_attribute,
                              "in_reply_to_screen_name": get_attribute,
                              "user_id": lambda status, _: status.user.id,
                              "text_length": lambda status, _: len(status.full_text),
-                             "hashtags": lambda status, _: [ht["text"] for ht in status.entities["hashtags"]],
+                             "hashtags": lambda status, name: [ht["text"] for ht in status.entities[name]],
+                             "user_mentions": lambda status, feature: [user["screen_name"] for user in status.entities[feature]],
                              "media_urls": lambda status, _: get_media(status),
                              "quoted_user_id": lambda status, _: get_quoted_user_id(status),
                              "retweeted_status": lambda status, _: get_retweeted_status(status),
-                             "retweeted_user_id": lambda status, _: get_retweeted_user_id(status)}
+                             "retweeted_user_id": lambda status, _: get_retweeted_user_id(status),
+                             "country": lambda status, _: get_country(status),
+                             "place_type": lambda status, _: get_place_type(status),
+                             "place_coordinates": lambda status, _: get_place_coordinates(status)}
 
 
 class Collector(ABC):
@@ -162,7 +165,7 @@ class Collector(ABC):
         """
 
         if self._debug:
-            func(msg)
+            logging.warning(msg)
 
 
 class AccountCollector(Collector):
