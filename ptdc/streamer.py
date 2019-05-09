@@ -85,7 +85,7 @@ class OnlineStreamer(tweepy.StreamListener):
         """
 
         if self._debug:
-            logging.warning(msg)
+            func(msg)
 
     def on_connect(self):
 

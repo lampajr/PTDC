@@ -165,7 +165,7 @@ class Collector(ABC):
         """
 
         if self._debug:
-            logging.warning(msg)
+            func(msg)
 
 
 class AccountCollector(Collector):
