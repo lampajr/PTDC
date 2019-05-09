@@ -27,4 +27,4 @@ __all__ = [
     '__version__'
 ]
 
-logging.basicConfig(level=logging.WARNING, format='%(levelname)s:%(module)s.%(funcName)s.%(lineno)d:%(message)s')
+logging.basicConfig(level=logging.WARNING, format='%(levelname)s:%(module)s:%(message)s')
