@@ -1,5 +1,6 @@
 from setuptools import setup, find_packages
 import re
+from pypandoc import convert
 
 
 def get_ptdc_version():
@@ -42,5 +43,4 @@ setup(
     ],
 
     # use the module docs as the long description:
-    long_description=open('README.md', 'r').read()
-)
+    long_description=convert('README.md', 'rst'))

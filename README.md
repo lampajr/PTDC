@@ -33,50 +33,50 @@ $ pip install ptdc
 
 ## EXAMPLE USAGE
 ### Import modules
-    from ptdc import authenticate, AccountCollector, OnlineStreamer, StatusCollector
-   
+```
+from ptdc import authenticate, AccountCollector, OnlineStreamer, StatusCollector
+```
 ### Define tokens
 Replace the following tokens with yours, see Twitter developers [authentication](https://developer.twitter.com/en/docs/basics/authentication/guides/access-tokens.html) for more details about how obtain them.
-    
-    consumer_key = "xxxxxxxxxxx"
-    consumer_key_secret = "xxxxxxxxxxxxx"
-    access_token = "xxxxxxxxxxxxxxxxxxxxxx"
-    access_token_secret = "xxxxxxxxxxxxxxxxxx"
-    
+```    
+consumer_key = "xxxxxxxxxxx"
+consumer_key_secret = "xxxxxxxxxxxxx"
+access_token = "xxxxxxxxxxxxxxxxxxxxxx"
+access_token_secret = "xxxxxxxxxxxxxxxxxx"
+```    
 ### Create the default Tweepy API object of tweepy
-    api = authenticate(consumer_key=consumer_key,
-                       consumer_key_secret=consumer_key_secret,
-                       access_token=access_token,
-                       access_token_secret=access_token_secret)
-                       
+
+```
+api = authenticate(consumer_key=consumer_key, consumer_key_secret=consumer_key_secret, access_token=access_token, access_token_secret=access_token_secret)
+```                       
+
 ### Create your own Collectors for collecting data
 Create your own StatusCollector object
-    
-    s_collector = StatusCollector(api=api)
-    
+
+```
+s_collector = StatusCollector(api=api)
+```    
+
 Create your own AccountCollector object, which will collect also statuses 
-
-    collector = AccountCollector(api=api, statuses_collector=s_collector)
-
+```
+collector = AccountCollector(api=api, statuses_collector=s_collector)
+```
 ### Create the Streamer
 Create Online Streamer that will collect data (in this case will collect only 5 accounts)
-    
-    streamer = OnlineStreamer(api=api,
-                              collector=collector,
-                              data_limit=5,
-                              n_statuses=400)
-
+```
+streamer = OnlineStreamer(api=api, collector=collector, data_limit=5, n_statuses=400)
+```
 ### Start streaming
 You can start streaming in all ways defined by Tweepy, see its doc for more details
- 
-    streamer.stream(track=['famous', 'web', 'vip', 'holiday', 'pic', 'photo'], is_async=False)
-
+```
+streamer.stream(track=['famous', 'web', 'vip', 'holiday', 'pic', 'photo'], is_async=False)
+```
 ### Save dataset/s
 After streaming ended (in according to your defined limits), save DataFrame/s generated into csv file/s.
 You just need to access the collector object and call the save_dataset method providing the path.
-
-    streamer.collector.save_dataset(path="../data/accounts.csv")
-    
+```
+streamer.collector.save_dataset(path="../data/accounts.csv")
+```    
 ## Questions and Contributing
 
 Feel free to post questions and problems on the issue tracker. Pull requests are welcome!
