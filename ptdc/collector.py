@@ -230,7 +230,7 @@ class AccountCollector(Collector):
         :param filter_account: filtering function to apply to the Account obj
         :param filter_status: filtering function to apply to the Status obj
         """
-        self.verboseprint("Collecting account..")
+        self.verboseprint("Collecting account.", end='\r')
         logging.debug("Collecting account infos..")
         account = self.api.get_user(screen_name)
         if filter_account(account):
@@ -314,8 +314,11 @@ class StatusCollector(Collector):
         # save the most recent statuses
         all_statuses.extend(new_statuses)
 
+        self.verboseprint("Collecting account", end='')
+
         # save the id of the oldest status
-        oldest = all_statuses[-1].id
+
+        oldest = all_statuses[-1].id if len(all_statuses) > 0 else None
 
         # keep grabbing statuses until no statuses left to grab or the total amount of statuses to collect was reached
         while len(new_statuses) > 0 and len(all_statuses) < n_statuses:
@@ -331,11 +334,14 @@ class StatusCollector(Collector):
                 # update oldest status
                 oldest = all_statuses[-1].id - 1
 
-                self.verboseprint("Collected {}/{} statuses..".format(len(all_statuses), n_statuses))
+                self.verboseprint(".", end='')
                 logging.debug("Collected {}/{} statuses..".format(len(all_statuses), n_statuses))
             except tweepy.TweepError as e:
                 logging.warning(e)
                 continue
+
+        self.verboseprint("\nAccount collected : {}/{} statuses..".format(len(all_statuses), n_statuses))
+        logging.debug("Collected {}/{} statuses..".format(len(all_statuses), n_statuses))
 
         all_statuses = np.array(all_statuses)
         # keep all statuses that satisfy the filtering function
