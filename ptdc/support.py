@@ -27,7 +27,7 @@ def get_time(millis=False):
         return int(round(t))
 
 
-def get_date(format_="%b %d %Y %H:%M:%S"):
+def get_date(format_='%Y-%m-%d %H:%M:%S'):
 
     """
     Returns the current date
@@ -46,6 +46,19 @@ def get_attribute(obj, attr_name):
     """
 
     return getattr(obj, attr_name)
+
+def get_timestamp(date, format_='%Y-%m-%d %H:%M:%S'):
+
+    """
+    Convert the datetime obj into timestamp
+    :param date: datetime obj
+    :param format_: format
+    :return: timestamp in milliseconds
+    """
+    if isinstance(date, datetime):
+        return date.timestamp() * 1000
+    else:
+        return datetime.strptime(date, format_).timestamp() * 1000
 
 
 def get_country(status):
