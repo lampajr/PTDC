@@ -274,7 +274,6 @@ class AccountCollector(Collector):
         for each them the features passed in the constructor
         :param name: query name
         :param count: number of user to keep, at most
-        :param add_query_feature: tells whether or not add in the account features the query made for collect it
         :param filter_account: optional, account filtering function
         :param filter_status: optional, statuses filtering function
         :param exclude: optional, list of user's screen_name to exclude from collection
@@ -289,10 +288,15 @@ class AccountCollector(Collector):
         if query in self._features.keys():
             self._features[query] = lambda x, y: name
 
-        for user in tweepy.Cursor(self.api.search_users, q=name).items(count):
-            if user.screen_name not in exclude and user.id not in loaded_ids:
-                loaded_ids.append(user.id)
-                self.collect_account(user.screen_name, 0, filter_account, filter_status)
+        try:
+            for user in tweepy.Cursor(self.api.search_users, q=name).items(count):
+                if user.screen_name not in exclude and user.id not in loaded_ids:
+                    loaded_ids.append(user.id)
+                    self.collect_account(user.screen_name, 0, filter_account, filter_status)
+                elif user.screen_name in loaded_ids:
+                    return
+        except tweepy.TweepError:
+            pass
 
 
 class StatusCollector(Collector):
