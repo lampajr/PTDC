@@ -22,6 +22,7 @@ from ptdc.support import get_attribute, get_retweeted_user_id, get_retweeted_sta
 default_account_features = {"id": get_attribute,
                             "name": get_attribute,
                             "screen_name": get_attribute,
+                            "query": lambda x, y: 'streaming',
                             "location": get_attribute,
                             "url": get_attribute,
                             "description": get_attribute,
@@ -264,7 +265,6 @@ class AccountCollector(Collector):
     def collect_users_by_name(self,
                               name,
                               count,
-                              add_query_feature=True,
                               filter_account=lambda x: True,
                               filter_status=lambda x: True,
                               exclude=None):
@@ -281,10 +281,13 @@ class AccountCollector(Collector):
         """
 
         exclude = [] if exclude is None else exclude
+        loaded_ids = []
+        query = 'query'
 
         self.verboseprint("Searching by {}..".format(name))
 
-        loaded_ids = []
+        if query in self._features.keys():
+            self._features[query] = lambda x, y: name
 
         for user in tweepy.Cursor(self.api.search_users, q=name).items(count):
             if user.screen_name not in exclude and user.id not in loaded_ids:
