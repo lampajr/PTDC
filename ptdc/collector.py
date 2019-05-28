@@ -17,7 +17,7 @@ import pandas as pd
 import tweepy
 
 from ptdc.support import get_attribute, get_retweeted_user_id, get_retweeted_status, get_quoted_user_id, get_media, \
-    get_date, get_country, get_place_type, get_time, get_timestamp
+    get_country, get_place_type, get_time, get_timestamp
 
 default_account_features = {"id": get_attribute,
                             "name": get_attribute,
