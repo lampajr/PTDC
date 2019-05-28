@@ -23,6 +23,10 @@ Please refer to [documentation](https://developer.twitter.com/en/docs/tweets/dat
 
 NB: It is not mandatory to use both collectors and streamer but you can also use Collectors alone, for instance if you already have the users and/or statuses to collect and you don't need to stream anything.
 
+
+***NEW FEATURES:***
+* *Offline collection by name*, allow user to make a query by name and collect some name-similar users extracting features defined in the collector constructor
+
 ## INSTALLATION
 
 The package is available on PyPi [here](https://pypi.org/project/ptdc/)

@@ -17,7 +17,7 @@ import pandas as pd
 import tweepy
 
 from ptdc.support import get_attribute, get_retweeted_user_id, get_retweeted_status, get_quoted_user_id, get_media, \
-    get_date, get_country, get_place_type
+    get_date, get_country, get_place_type, get_time, get_timestamp
 
 default_account_features = {"id": get_attribute,
                             "name": get_attribute,
@@ -32,24 +32,20 @@ default_account_features = {"id": get_attribute,
                             "listed_count": get_attribute,
                             "favourites_count": get_attribute,
                             "statuses_count": get_attribute,
-                            "created_at": get_attribute,
-                            "utc_offset": get_attribute,
-                            "time_zone": get_attribute,
+                            "created_at": lambda user, feature_name: get_timestamp(get_attribute(user, feature_name)),
                             "geo_enabled": get_attribute,
                             "lang": get_attribute,
                             "contributors_enabled": get_attribute,
                             "profile_background_color": get_attribute,
-                            "profile_background_image_url": get_attribute,
                             "profile_background_image_url_https": get_attribute,
                             "profile_background_tile": get_attribute,
-                            "profile_image_url": get_attribute,
                             "profile_image_url_https": get_attribute,
                             "profile_link_color": get_attribute,
                             "profile_text_color": get_attribute,
                             "profile_use_background_image": get_attribute,
                             "default_profile": get_attribute,
                             "default_profile_image": get_attribute,
-                            "profile_crawled": lambda x, y: get_date(),
+                            "profile_crawled": lambda x, y: get_time(),
                             "is_suspended": lambda x, y: 0,
                             "following_followers_ratio": lambda user, _: user.friends_count / user.followers_count if user.followers_count != 0 else None,
                             "followers_following_ratio": lambda user, _: user.followers_count / user.friends_count if user.friends_count != 0 else None}
@@ -264,6 +260,36 @@ class AccountCollector(Collector):
 
         raw_data = pd.Series(account_data, index=self.dataset().columns)
         return raw_data
+
+    def collect_users_by_name(self,
+                              name,
+                              count,
+                              add_query_feature=True,
+                              filter_account=lambda x: True,
+                              filter_status=lambda x: True,
+                              exclude=None):
+
+        """
+        Make a query search by name and collect 'count' users extracting
+        for each them the features passed in the constructor
+        :param name: query name
+        :param count: number of user to keep, at most
+        :param add_query_feature: tells whether or not add in the account features the query made for collect it
+        :param filter_account: optional, account filtering function
+        :param filter_status: optional, statuses filtering function
+        :param exclude: optional, list of user's screen_name to exclude from collection
+        """
+
+        exclude = [] if exclude is None else exclude
+
+        self.verboseprint("Searching by {}..".format(name))
+
+        loaded_ids = []
+
+        for user in tweepy.Cursor(self.api.search_users, q=name).items(count):
+            if user.screen_name not in exclude and user.id not in loaded_ids:
+                loaded_ids.append(user.id)
+                self.collect_account(user.screen_name, 0, filter_account, filter_status)
 
 
 class StatusCollector(Collector):
